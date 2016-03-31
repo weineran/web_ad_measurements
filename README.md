@@ -16,7 +16,7 @@ Self explanatory.
 Open Chrome Canary and navigate to `chrome://inspect/`</br>
 Confirm that you see your phone's Chrome tab listed here.
 ### Step 4. Run the script
-`python chrome-automation-WebSocket.py 5 ./url_list.txt ./`</br>
+Run: `python chrome-automation-WebSocket.py 5 ./url_list.txt ./`</br>
 You may be prompted for a little additional info while the script is running.</br>
 The script will look in the file `url_list.txt` for a list of URLs to load.</br>
 It will load each URL in the list and collect data for `5` seconds before loading the next URL in the list.</br>
