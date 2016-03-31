@@ -13,7 +13,7 @@ Plug your phone into your computer via USB.
 ### Step 2. Open a Chrome tab on your phone
 Self explanatory.
 ### Step 3. Open Chrome Canary on your computer
-Open Chrome Canary and navigate to `chrome://inspect/`
+Open Chrome Canary and navigate to `chrome://inspect/`</br>
 Confirm that you see your phone's Chrome tab listed here.
 ### Step 4. Run the script
 `python chrome-automation-WebSocket.py 5 ./url_list.txt ./`</br>
