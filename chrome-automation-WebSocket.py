@@ -48,8 +48,12 @@ def _getDataUntilCutoff(ws, msg_list, first_timestamp, cutoff_time):
         except KeyError as e:
             #print("KeyError. "+str(this_resp))
             pass # just check the next timestamp
-        if (this_timestamp - first_timestamp) > cutoff_time:
-            break
+        else:
+            # if we have a value for this_timestamp, and it has been long enough
+            # since the first timestamp, then break out of loop
+            if (this_timestamp - first_timestamp) > cutoff_time:
+                print("last_timestamp: " + str(this_timestamp))
+                break
 
 
 def LoadPage_SaveData(ws, this_url, output_dir, cutoff_time, i):
@@ -115,7 +119,7 @@ if __name__ == "__main__":
 
     i = 3
     for this_url in URL_LIST:
-        print("Preparing to load "+this_url)
+        print("Loading "+this_url)
         LoadPage_SaveData(ws, this_url, output_dir, cutoff_time, i)
         i += 1
 
