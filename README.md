@@ -22,3 +22,11 @@ The script will look in the file `url_list.txt` for a list of URLs to load.</br>
 It will load each URL in the list and collect data for `5` seconds before loading the next URL in the list.</br>
 Data from each page load will be saved in a separate file in the output directory: `./`</br>
 For more info, you can run: `python chrome-automation-WebSocket.py -h`
+
+## Getting started: Loading a few pages in a row on your computer
+### Step 0. Prerequisites
+Same Step 0 from the phone instructions above, except that you don't need `adb`.
+### Step 1. Open Chrome Canary on your computer
+Run: `/path/to/chrome-canary/chrome.exe --remote-debugging-port=9222`
+### Step 2. Run the script
+Same as Step 4 above.
