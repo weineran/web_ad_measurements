@@ -3,8 +3,7 @@ import websocket
 import time
 import json
 import argparse
-from subprocess import call
-from MeasurePageLoad import MeasurePageLoad
+from MeasurePageLoad import MeasurePageLoad, connectToDevice
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -27,16 +26,15 @@ if __name__ == "__main__":
     output_dir = args.output_dir
 
     # connect to device
-    print("")
-    print("Calling 'adb forward tcp:9222 localabstract:chrome_devtools_remote'")
-    call("adb forward tcp:9222 localabstract:chrome_devtools_remote")
+    debug_port = 9222
+    device = connectToDevice(debug_port)
 
     # get list of URLs from file
     with open(url_list_file, 'r') as f:
             URL_LIST = json.load(f)
     
     # Connect to phone and gather json info
-    r = requests.get("http://localhost:9222/json")
+    r = requests.get("http://localhost:"+str(debug_port)+"/json")
     resp_json = r.json()
 
     # Choose a browser tab to drive remotely
@@ -65,16 +63,24 @@ if __name__ == "__main__":
     # connect to first tab via the WS debug URL
     url_ws = str(target_tab['webSocketDebuggerUrl'])
     ws = websocket.create_connection(url_ws)
+    mpl = MeasurePageLoad(ws, cutoff_time=cutoff_time, device=device, debug_port=debug_port)
+    mpl.sendMethod("Console.enable", None, True)
+    mpl.sendMethod("Debugger.enable", None, False)
+    mpl.sendMethod("Network.enable", None, True)
+    mpl.sendMethod("Page.enable", None, True)
+    mpl.sendMethod("Runtime.enable", None, True)
+    mpl.sendMethod("Timeline.start", None, True)
 
-    ws.send(json.dumps({'id': 1, 'method': 'Network.enable'}))
-    print(ws.recv())
-    ws.send(json.dumps({'id': 2, 'method': 'Page.enable'}))
-    print(ws.recv())
-
-    i = 3
     for this_url in URL_LIST:
-        mpl = MeasurePageLoad(ws, this_url, cutoff_time)
-        print("Loading "+this_url)
-        mpl.LoadPage_SaveData(output_dir, i)
-        i += 1
+        # run with ad-blocker ON
+        mpl.enableAdBlock()
+        mpl.clearAllCaches()
+        print("Loading "+this_url+" without ads.")
+        mpl.LoadPage_SaveData(output_dir, this_url)
+
+        # run with ad-blocker OFF
+        mpl.disableAdBlock()
+        mpl.clearAllCaches()
+        print("Loading "+this_url+" with ads.")
+        mpl.LoadPage_SaveData(output_dir, this_url)
 
