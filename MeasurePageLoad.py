@@ -5,6 +5,22 @@ import time
 from subprocess import call, Popen
 import requests
 from PIL import Image
+import multiprocessing
+#from timeout import timeout
+
+
+def shouldContinue():
+    resp = raw_input("Would you like to continue? (y or n)\n>")
+    if resp == 'y':
+        return True
+    elif resp == 'n':
+        return False
+    else:
+        print("Invalid response.  Please try again.")
+        return shouldContinue()
+
+def getLocation():
+    return raw_input("What is your location?\n(e.g. 'home'. Needed for filename convention)\n>")
 
 def connectToDevice(debug_port):
     '''
@@ -13,22 +29,72 @@ def connectToDevice(debug_port):
     print("")
     choice_num = input("\nDo you want to drive Chrome on your phone or on your computer?\n"+
                         "Chrome on phone    - enter '1'\n"+
-                        "Chrome on computer - enter '2'\n")
+                        "Chrome on computer - enter '2'\n>")
     if choice_num == 1:
         device = "phone"
         command = "adb forward tcp:"+str(debug_port)+" localabstract:chrome_devtools_remote"
-        printAndCall(command)
+        ret_code = printAndCall(command)
+        if ret_code == 1:
+            print("Error.  Please ensure that phone is connected and try again.")
+            return connectToDevice(debug_port)
     elif choice_num == 2:
         device = "computer"
-        #path_to_chrome = _getChromePath()
-        #command = '"' + path_to_chrome + '" --remote-debugging-port=9222'
-        #print('Calling '+command)
-        #p_chrome = Popen(command)
+        if shouldOpenChromeCanary():
+            openChromeCanary(debug_port)
     else:
         print("ERR: Invalid choice.")
         raise
 
     return device
+
+def fixURL(url):
+    if not urlHasScheme(url):
+        return "http://"+url
+    else:
+        return url
+
+def urlHasScheme(url):
+    if url[0:4] == "http":
+        return True
+    else:
+        return False
+
+def getNetworkType(device):
+    if device == "phone":
+        valid_resp_list = ["wifi", "4g"]
+    elif device == "computer":
+        valid_resp_list = ["wifi", "wired"]
+    else:
+        print("ERR. Invalid device: "+str(device))
+        raise
+
+    ask_str = "What type of network are you connected to?\nValid responses are: "
+    for resp in valid_resp_list:
+        ask_str += (resp+", ")
+    network_type = raw_input(ask_str+"\n>")
+    network_type = network_type.lower()
+    if network_type in valid_resp_list:
+        return network_type
+    else:
+        print("Invalid response.  Please try again.")
+        return getNetworkType(device)
+
+def openChromeCanary(debug_port):
+    path_to_chrome = _getChromePath()
+    command = '"' + path_to_chrome + '" --remote-debugging-port='+str(debug_port)
+    print('Popening '+command)
+    p_chrome = Popen(command)
+
+def shouldOpenChromeCanary():
+    resp = raw_input("Is Chrome Canary already open with --remote-debugging-port flag?\n"+
+                    "(Enter y or n)\n>")
+    if resp == 'y':
+        return False
+    elif resp == 'n':
+        return True
+    else:
+        print("Invalid response.  Please enter y or n")
+        return shouldOpenChromeCanary()
 
 def _getChromePath():
     '''
@@ -36,15 +102,19 @@ def _getChromePath():
     Returns a string representing the full path.
     '''
     path_to_chrome = raw_input("Enter the path to your Chrome Canary executable.\n"+
-                            "(If you wish to use 'C:\Users\[username]\AppData\Local\Google\Chrome SxS\Application\chrome.exe', enter '0')\n")
+                            "(If you wish to use 'C:\Users\[username]\AppData\Local\Google\Chrome SxS\Application\chrome.exe', enter '0')\n>")
     if path_to_chrome == '0':
-        username = raw_input("Enter your username\n")
+        username = raw_input("Enter your username\n>")
+        path_to_chrome = os.path.join("C:\Users", username, "AppData\Local\Google\Chrome SxS\Application\chrome.exe")
+    elif path_to_chrome == 'a':
+        # easter egg for me
+        username = "Andrew"
         path_to_chrome = os.path.join("C:\Users", username, "AppData\Local\Google\Chrome SxS\Application\chrome.exe")
     return path_to_chrome
 
 def printAndCall(command):
     print("Calling '"+command+"'")
-    call(command)
+    return call(command)
 
 class MeasurePageLoad:
     """
@@ -54,7 +124,7 @@ class MeasurePageLoad:
     
     # constructor
     def __init__(self, ws, page_url = None, cutoff_time = None, device = "computer", debug_port=9222, 
-                 phone_adBlockPackage="com.savageorgiev.blockthis"):
+                 phone_adBlockPackage="com.savageorgiev.blockthis", network_type=None, location=None):
         self.ws = ws                 # websocket.WebSocket object
         self.page_url = page_url
         self.cutoff_time = cutoff_time
@@ -64,8 +134,23 @@ class MeasurePageLoad:
         self.device = device           # "phone" or "computer"
         self.debug_port = debug_port
         self.id = 1
+        self.network_type = network_type
         self.phone_adBlockPackage = phone_adBlockPackage
+        #self.p = None
+        self.frames = {}
+        self.firstFrame = False
+        self.logMsgs = []
+        self.location = location
+        self.fname = None
         self._isBlockingAds = self.isAdBlockEnabled()
+
+    def writeLog(self, output_dir):
+        log_fname = str(time.time())+".log"
+        log_path = os.path.join(output_dir,log_fname)
+        f = open(log_path, 'w')
+        for msg in self.logMsgs:
+            f.write(msg+"\n")
+        f.close()
 
     def sendMethod(self, method_name, params, shouldPrintResp):
         if params == None:
@@ -220,7 +305,7 @@ class MeasurePageLoad:
         printAndCall(command)
 
         # pull screencap to computer
-        command = "adb shell pull /sdcard/screen.png"
+        command = "adb pull /sdcard/screen.png"
         printAndCall(command)
 
         im = Image.open("screen.png")
@@ -229,8 +314,10 @@ class MeasurePageLoad:
         if target_pixel[0] == target_R:
             if target_pixel[1] == target_G:
                 if target_pixel[2] == target_B:
+                    os.remove("screen.png")
                     return True
 
+        os.remove("screen.png")
         return False
 
     def pressAndReleaseKey(self, keyIdentifier):
@@ -258,6 +345,7 @@ class MeasurePageLoad:
         self.waitForPageLoad()
 
     def clearBrowserObjCache(self):
+        self.sendMethod("Network.setCacheDisabled", None, True)
         self.sendMethod("Network.clearBrowserCache", None, True)
         return
 
@@ -326,12 +414,34 @@ class MeasurePageLoad:
             self.sendMethod("Input.dispatchKeyEvent", params, True)
 
     def navToURL(self, dst_url):
-        # bring chrome to front so we can watch
-        command = "adb shell am start com.android.chrome"
-        printAndCall(command)
+        if self.device == "phone":
+            # bring chrome to front so we can watch
+            command = "adb shell am start com.android.chrome"
+            printAndCall(command)
 
         params = {'url': dst_url}
         self.sendMethod('Page.navigate', params, True)
+
+    def _updateFrameDict(self, resp):
+        try:
+            method = resp["method"]
+        except:
+            pass
+        else:
+            if method == "Page.frameStartedLoading":
+                frameId = resp["params"]["frameId"]
+                self.frames[frameId] = True
+                self.firstFrame = True
+            elif method == "Page.frameStoppedLoading":
+                frameId = resp["params"]["frameId"]
+                self.frames.pop(frameId)
+
+    #@timeout(3)
+    def _getNextWsResp(self):
+        resp = json.loads(self.ws.recv())
+        self._updateFrameDict(resp)
+        #conn.send(resp)
+        return resp
 
     def _getFirstTimestamp(self):
         """
@@ -340,20 +450,67 @@ class MeasurePageLoad:
         """
         print("Getting first_timestamp")
         while True:
-            first_resp = json.loads(self.ws.recv())
+            first_resp = self._getNextWsResp()
             self.msg_list.append(first_resp)
 
             try:
-                first_timestamp = first_resp["params"]["timestamp"]
-            except KeyError as e:
-                print("KeyError: "+str(first_resp))
-            else:
-                # if successfully got first_timestamp, break out of loop
-                break
+                method = first_resp["method"]
+            except:
+                method = None
+                pass
+
+            if method == "Network.requestWillBeSent":
+                try:
+                    first_timestamp = first_resp["params"]["timestamp"]
+                except KeyError as e:
+                    print("KeyError: "+str(first_resp))
+                else:
+                    # if successfully got first_timestamp, break out of loop
+                    break
 
         print("first_timestamp: " + str(first_timestamp))
         self.first_timestamp = first_timestamp
         return first_timestamp
+
+    def _isPastCutOffTime(self, this_timestamp):
+        if (this_timestamp - self.first_timestamp) > self.cutoff_time:
+            return True
+
+    def _timeout(self, this_timestamp):
+        print("last_timestamp: " + str(this_timestamp))
+        self.last_timestamp = this_timestamp
+
+    def _finishedLoading(self):
+        # print("Nothing received through websocket for a few seconds.  Assume page is finished loading.")
+        # print("Last resp recieved:")
+        # print(this_resp)
+        # print("last_timestamp: "+str(this_timestamp))
+        # self.last_timestamp = this_timestamp
+        if self.firstFrame == True and len(self.frames) == 0:
+            return True
+
+    def enforceNoneBlocked(self, resp):
+        try:
+            errorText = resp["params"]["errorText"]
+        except:
+            pass
+        else:
+            if errorText == "net::ERR_BLOCKED_BY_CLIENT" or errorText == "net::ERR_CONNECTION_REFUSED":
+                self.logMsgs.append("Obj blocked while ad-blocker disabled: "+self.fname+" "+errorText)
+
+    def enforceNoCache(self, resp):
+        try:
+            method = resp["method"]
+        except:
+            pass
+        else:
+            if method == "Network.requestServedFromCache":
+                self.logMsgs.append("Obj served from cache: "+self.fname+" "+str(resp))
+
+    def validateResp(self, resp):
+        if self._isBlockingAds == False:
+            self.enforceNoneBlocked(resp)
+        self.enforceNoCache(resp)
 
     def _getDataUntilCutoff(self):
         """
@@ -361,21 +518,61 @@ class MeasurePageLoad:
         timestamp is past the cutoff_time.  Saves this last timestamp in the
         object's last_timestamp attribute.
         """
+        this_resp = "{'None': None}"
         while True:
-            this_resp = json.loads(self.ws.recv())
+            if self._finishedLoading():
+                print("Finished loading page.")
+                return
+            this_resp = self._getNextWsResp()
+            self.validateResp(this_resp)
+            # parent_conn, child_conn = multiprocessing.Pipe()    # open a channel
+            # self.p = multiprocessing.Process(target=_getNextWsResp(self.ws, child_conn))
+            # self.p.start()
+            # self.p.join(3)  # block parent process until timeout or p terminates
+            # if self.p.is_alive():
+            #     # nothing received through websocket
+            #     self.p.terminate()
+            #     self.p.join()
+            #     parent_conn.close()
+            #     child_conn.close()
+            #     self._finishedLoading(this_resp, this_timestamp)
+            #     return
+            #     # this_timestamp = time.time()
+            #     # if self._isPastCutOffTime(this_timestamp):
+            #     #     self._timeout(this_timestamp)
+            #     #     return
+            #     # else:
+            #     #     # loop again
+            #     #     continue
+            # else:
+            #     # there should be a resp waiting for us on the channel
+            #     this_resp = parent_conn.recv()
+            #     #print(this_resp)
+            # parent_conn.close()
+            # child_conn.close()
+            
             self.msg_list.append(this_resp)
+
+            try:
+                method = this_resp["method"]
+            except:
+                method = None
+
+            #if method == "Network.responseReceived":
+                #print(this_resp)
             try:
                 this_timestamp = this_resp["params"]["timestamp"]
+                #this_timestamp = time.time()
             except KeyError as e:
                 #print("KeyError. "+str(this_resp))
                 pass # just check the next timestamp
             else:
                 # if we have a value for this_timestamp, and it has been long enough
                 # since the first timestamp, then break out of loop
-                if (this_timestamp - self.first_timestamp) > self.cutoff_time:
-                    print("last_timestamp: " + str(this_timestamp))
-                    self.last_timestamp = this_timestamp
-                    break
+                if self._isPastCutOffTime(this_timestamp):
+                    self._timeout(this_timestamp)
+                    print(this_resp)
+                    return
 
     def _getHARresp(self):
         while True:
@@ -389,40 +586,49 @@ class MeasurePageLoad:
                 break
 
 
-    def LoadPage_SaveData(self, output_dir, dst_url):
+    def LoadPage_SaveData(self, output_dir, dst_url, sample_num):
         """
         Tells the connected browser to load the desired page.  Loads the page for
         the amount of time specified by the object's cutoff_time attribute.  Saves
         data on the page load to the object's msg_list.  When cutoff_time is reached,
         all the data in msg_list is written to a file in the specified output_dir.
         """
-        # Tell browser to load the desired page
+        # reset frame dict
+        self.frames = {}
+        self.firstFrame = False
+        
+        # update attributes
         self.page_url = dst_url
+        hostname = urlparse(self.page_url).netloc
+        self.fname = self.location+"-"+self.device+"-"+self.network_type+"-"+str(self._isBlockingAds)+"-"+\
+                str(sample_num)+"-"+hostname+".txt"
+
+        # Tell browser to load the desired page
         self.navToURL(self.page_url)
 
         # get data and put in msg_list
         first_timestamp = self._getFirstTimestamp()
+        #self.first_timestamp = time.time()
         self._getDataUntilCutoff()
 
         # save data to file
-        hostname = urlparse(self.page_url).netloc + ".txt"
-        output_file = os.path.join(output_dir, hostname)
+        output_file = os.path.join(output_dir, self.fname)
         with open(output_file, "w") as f:
             json.dump(self.msg_list, f)
 
-    def getHar(self, output_dir, i):
-        '''
-        Tells the connected browser to load the desired page.  Loads the page for
-        the amount of time specified by the object's cutoff_time attribute.  Saves the HAR
-        file using the chrome.devtools.network.getHAR() method.
-        '''
-        self.ws.send(json.dumps({'id': i, 'method': 'Page.navigate', 'params': {'url': self.page_url}}))
-        self.first_timestamp = time.time()
-        self.ws.send(json.dumps({'id': i, 'method': 'chrome.devtools.network.getHAR', 'params': {}}))
-        self._getHARresp()
+    # def getHar(self, output_dir, i):
+    #     '''
+    #     Tells the connected browser to load the desired page.  Loads the page for
+    #     the amount of time specified by the object's cutoff_time attribute.  Saves the HAR
+    #     file using the chrome.devtools.network.getHAR() method.
+    #     '''
+    #     self.ws.send(json.dumps({'id': i, 'method': 'Page.navigate', 'params': {'url': self.page_url}}))
+    #     self.first_timestamp = time.time()
+    #     self.ws.send(json.dumps({'id': i, 'method': 'chrome.devtools.network.getHAR', 'params': {}}))
+    #     self._getHARresp()
 
-        # save data to file
-        hostname = urlparse(self.page_url).netloc + "-HAR.txt"
-        output_file = os.path.join(output_dir, hostname)
-        with open(output_file, "w") as f:
-            json.dump(self.msg_list, f)
+    #     # save data to file
+    #     hostname = urlparse(self.page_url).netloc + "-HAR.txt"
+    #     output_file = os.path.join(output_dir, hostname)
+    #     with open(output_file, "w") as f:
+    #         json.dump(self.msg_list, f)

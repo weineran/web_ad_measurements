@@ -3,7 +3,7 @@ import websocket
 import time
 import json
 import argparse
-from MeasurePageLoad import MeasurePageLoad, connectToDevice
+from MeasurePageLoad import MeasurePageLoad, connectToDevice, getNetworkType, shouldContinue, fixURL, getLocation
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -11,11 +11,15 @@ def parse_args():
     parser.add_argument('cutoff_time', type=int,
                     help="The number of seconds to allow a page to load "
                         "(while collecting data) before loading the next page.")
+    parser.add_argument('num_samples', type=int,
+                    help="The number of times to load each page with and without ads.")
     parser.add_argument('url_list_file', type=str,
                     help="A file containing an ordered list of urls to load.  Each page "
                         "is loaded for the amount of time specified by the cutoff_time argument.")
     parser.add_argument('output_dir', type=str,
                     help="A directory where the output data files will be written.")
+    parser.add_argument('debug_port', type=int,
+                    help="The port to use as the 'remote-debugging-port'")
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -24,17 +28,38 @@ if __name__ == "__main__":
     cutoff_time = args.cutoff_time
     url_list_file = args.url_list_file
     output_dir = args.output_dir
-
-    # connect to device
-    debug_port = 9222
-    device = connectToDevice(debug_port)
+    debug_port = args.debug_port
+    num_samples = args.num_samples
 
     # get list of URLs from file
     with open(url_list_file, 'r') as f:
-            URL_LIST = json.load(f)
+            url_list = json.load(f)
+
+    num_urls = len(url_list)
+    min_time = num_urls * 2 * num_samples * cutoff_time/60.0
+    print("This will require at least "+str(min_time)+" minutes to complete.")
+    if not shouldContinue():
+        print("Canceled.")
+        exit()
+
+    # get location
+    location = getLocation()
+
+    # connect to device
+    device = connectToDevice(debug_port)
+
+    # get network connection type
+    network_type = getNetworkType(device)
     
     # Connect to phone and gather json info
-    r = requests.get("http://localhost:"+str(debug_port)+"/json")
+    while True:
+        try:
+            r = requests.get("http://localhost:"+str(debug_port)+"/json")
+        except ConnectionError:
+            pass
+        else:
+            break
+
     resp_json = r.json()
 
     # Choose a browser tab to drive remotely
@@ -63,24 +88,32 @@ if __name__ == "__main__":
     # connect to first tab via the WS debug URL
     url_ws = str(target_tab['webSocketDebuggerUrl'])
     ws = websocket.create_connection(url_ws)
-    mpl = MeasurePageLoad(ws, cutoff_time=cutoff_time, device=device, debug_port=debug_port)
-    mpl.sendMethod("Console.enable", None, True)
-    mpl.sendMethod("Debugger.enable", None, False)
+    mpl = MeasurePageLoad(ws, cutoff_time=cutoff_time, device=device, debug_port=debug_port, 
+                        network_type=network_type, location=location)
+    #mpl.sendMethod("Console.enable", None, True)
+    #mpl.sendMethod("Debugger.enable", None, False)
     mpl.sendMethod("Network.enable", None, True)
     mpl.sendMethod("Page.enable", None, True)
-    mpl.sendMethod("Runtime.enable", None, True)
+    #mpl.sendMethod("Runtime.enable", None, True)
     mpl.sendMethod("Timeline.start", None, True)
 
-    for this_url in URL_LIST:
-        # run with ad-blocker ON
-        mpl.enableAdBlock()
-        mpl.clearAllCaches()
-        print("Loading "+this_url+" without ads.")
-        mpl.LoadPage_SaveData(output_dir, this_url)
+    for this_url in url_list:
+        this_url = fixURL(this_url)
+        
+        sample_num = 1
+        while sample_num <= num_samples:
+            # run with ad-blocker ON
+            mpl.enableAdBlock()
+            mpl.clearAllCaches()
+            print("\nLoading "+this_url+" without ads.")
+            mpl.LoadPage_SaveData(output_dir, this_url, sample_num)
 
-        # run with ad-blocker OFF
-        mpl.disableAdBlock()
-        mpl.clearAllCaches()
-        print("Loading "+this_url+" with ads.")
-        mpl.LoadPage_SaveData(output_dir, this_url)
+            # run with ad-blocker OFF
+            mpl.disableAdBlock()
+            mpl.clearAllCaches()
+            print("\nLoading "+this_url+" with ads.")
+            mpl.LoadPage_SaveData(output_dir, this_url, sample_num)
+            sample_num += 1
+
+    mpl.writeLog(output_dir)
 
