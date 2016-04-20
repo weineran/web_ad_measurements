@@ -61,7 +61,8 @@ def connectToDevice(debug_port):
                         "Chrome on computer - enter '2'\n>")
     if choice_num == 1:
         device = "phone"
-        command = "adb forward tcp:"+str(debug_port)+" localabstract:chrome_devtools_remote"
+        # command = "adb forward tcp:"+str(debug_port)+" localabstract:chrome_devtools_remote"
+        command = ["adb", "forward", "tcp:"+str(debug_port), "localabstract:chrome_devtools_remote"]
         ret_code = printAndCall(command)
         if ret_code == 1:
             print("Error.  Please ensure that phone is connected and try again.")
@@ -111,9 +112,12 @@ def getNetworkType(device):
 def openChromeCanary(debug_port):
     path_to_chrome = _getChromePath()
     user_data_dir = _getUserDataDir()
-    command = '"' + path_to_chrome + '" --remote-debugging-port='+str(debug_port)
+    # command = '"' + path_to_chrome + '" --remote-debugging-port='+str(debug_port)
+    # if user_data_dir != "":
+    #     command = command +  ' --user-data-dir="'+str(user_data_dir)+'"'
+    command = [path_to_chrome, "--remote-debugging-port="+str(debug_port)]
     if user_data_dir != "":
-        command = command +  ' --user-data-dir="'+str(user_data_dir)+'"'
+        command.append("--user-data-dir="+str(user_data_dir))
     print('Popening '+command)
     p_chrome = Popen(command)
 
@@ -156,7 +160,7 @@ def _getUserDataDir():
 
 
 def printAndCall(command):
-    print("Calling '"+command+"'")
+    print("Calling '"+str(command)+"'")
     return call(command)
 
 
@@ -184,6 +188,7 @@ class MeasurePageLoad:
         self.cutoff_time = cutoff_time
         self.debug_port = debug_port
         self.categories_and_ranks = None    # The Alexa categories this URL is ranked in
+        self.wsOverhead = 0
 
         #self.p = None
         self.frames = {}
@@ -272,6 +277,8 @@ class MeasurePageLoad:
         self.logMsgs.append("Theoretical time spent loading pages: "+str(min_time*60))
         self.logMsgs.append("Actual total time: "+str(time_elapsed))
         self.logMsgs.append("Ratio: "+str(time_elapsed/(min_time*60)))
+        self.logMsgs.append("Web Socket create/close overhead: "+str(self.wsOverhead))
+        self.logMsgs.append("Web Socket percent of total time: "+str(self.wsOverhead/time_elapsed))
 
         log_dir = os.path.join(self.output_dir,"log")
         log_path = os.path.join(log_dir, self.log_fname)
@@ -396,7 +403,8 @@ class MeasurePageLoad:
         self.pressAndReleaseKey(space_bar)
 
     def _disableAdBlockPhone(self):
-        command = "adb shell am force-stop "+self.phone_adBlockPackage
+        # command = "adb shell am force-stop "+self.phone_adBlockPackage
+        command = ["adb", "shell", "am", "force-stop", self.phone_adBlockPackage]
         printAndCall(command)
 
     def _enableAdBlockComputer(self):
@@ -417,14 +425,16 @@ class MeasurePageLoad:
         self._disableAdBlockPhone()
 
         # then start the ad-blocker
-        command = "adb shell am start "+self.phone_adBlockPackage
+        # command = "adb shell am start "+self.phone_adBlockPackage
+        command = ["adb", "shell", "am", "start", self.phone_adBlockPackage]
         printAndCall(command)
         
         # then tap start button
         tap_xcoord = 525
         tap_ycoord = 925
         self.waitForBlockThisStartBtn(tap_xcoord, tap_ycoord)
-        command = "adb shell input tap "+str(tap_xcoord)+" "+str(tap_ycoord)
+        # command = "adb shell input tap "+str(tap_xcoord)+" "+str(tap_ycoord)
+        command = ["adb", "shell", "input", "tap", str(tap_xcoord), str(tap_ycoord)]
         printAndCall(command)
 
     def waitForBlockThisStartBtn(self, xcoord, ycoord):
@@ -438,10 +448,12 @@ class MeasurePageLoad:
     def checkPixelColor(self, xcoord, ycoord, target_R, target_G, target_B):
         # save screencap
         command = "adb shell screencap /sdcard/screen.png"
+        command = command.split(' ')
         printAndCall(command)
 
         # pull screencap to computer
         command = "adb pull /sdcard/screen.png"
+        command = command.split(' ')
         printAndCall(command)
 
         im = Image.open("screen.png")
@@ -551,6 +563,7 @@ class MeasurePageLoad:
 
     def clearComputerDNScache(self):
         command = "ipconfig /flushdns"
+        command = ["service", "nscd", "restart"]
         printAndCall(command)
 
     def clearPhoneDNScache(self):
@@ -563,6 +576,7 @@ class MeasurePageLoad:
 
         # open settings window
         command = "adb shell am start -a android.settings.AIRPLANE_MODE_SETTINGS"
+        command = command.split(' ')
         printAndCall(command)
         time.sleep(sleep_time)
 
@@ -582,6 +596,7 @@ class MeasurePageLoad:
 
     def adbShellKeyEvent(self, keycode):
         command = "adb shell input keyevent "+keycode
+        command = command.split(' ')
         printAndCall(command)
 
     def pressKeyKtimes(self, keyIdentifier, num_times):
@@ -596,6 +611,7 @@ class MeasurePageLoad:
         if self.device == "phone":
             # bring chrome to front so we can watch
             command = "adb shell am start com.android.chrome"
+            command = command.split(' ')
             printAndCall(command)
 
         params = {'url': dst_url}
@@ -615,7 +631,11 @@ class MeasurePageLoad:
             elif method == "Page.frameStoppedLoading":
                 frameId = resp["params"]["frameId"]
                 print(resp)
-                self.frames.pop(frameId)
+                try:
+                    self.frames.pop(frameId)
+                except KeyError:
+                    self.writeLog(1,1)
+                    raise
 
 
     #@timeout(3)
@@ -989,6 +1009,7 @@ class MeasurePageLoad:
                 f.write(json.dumps(this_item)+"\n")
 
     def setupWebsocket(self):
+        ws_start = time.clock()
         print("Opening websocket.")
         self.ws = websocket.create_connection(self.url_ws)
         #mpl.sendMethod("Console.enable", None, True)
@@ -997,6 +1018,8 @@ class MeasurePageLoad:
         self.sendMethod("Page.enable", None, True)
         #mpl.sendMethod("Runtime.enable", None, True)
         self.sendMethod("Timeline.start", None, True)
+        ws_end = time.clock()
+        self.wsOverhead += (ws_end - ws_start)
 
     def runMeasurements(self, useAdBlock, this_url, sample_num):
         self.setupWebsocket()
@@ -1010,13 +1033,20 @@ class MeasurePageLoad:
 
         self.clearAllCaches()
         print(msg)
+
+        self.closeWebsocket()   # added these two lines to try to correct pop frameLoad error
+        self.setupWebsocket()
+
         self.LoadPage_SaveData(this_url, sample_num)
         self.closeWebsocket()
 
     def closeWebsocket(self):
+        ws_start = time.clock()
         print("Closing websocket.")
         self.ws.close()
         self.ws = None
+        ws_end = time.clock()
+        self.wsOverhead += (ws_end - ws_start)
 
     def setupOutputDirs(self):
         log_dir = os.path.join(self.output_dir, "log")
