@@ -1,9 +1,8 @@
 import requests
-import websocket
 import time
 import json
 import argparse
-from MeasurePageLoad import MeasurePageLoad, connectToDevice, getNetworkType, shouldContinue, fixURL, getLocation
+from MeasurePageLoad import MeasurePageLoad, connectToDevice, getNetworkType, shouldContinue, fixURL, getLocation, attemptConnection
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -41,24 +40,29 @@ if __name__ == "__main__":
     if not shouldContinue():
         print("Canceled.")
         exit()
+    
+    # connect to device
+    device = connectToDevice(debug_port)
 
     # get location
     location = getLocation()
-
-    # connect to device
-    device = connectToDevice(debug_port)
 
     # get network connection type
     network_type = getNetworkType(device)
     
     # Connect to phone and gather json info
+    remote_debug_url = "http://localhost:"+str(debug_port)+"/json"
     while True:
-        try:
-            r = requests.get("http://localhost:"+str(debug_port)+"/json")
-        except ConnectionError:
+        print("Opening websocket remote debugging connection to "+remote_debug_url)
+        r = attemptConnection(remote_debug_url)
+        if r == "try_again":
             pass
+        elif r == "give_up":
+            print("Script aborted.")
+            exit()
         else:
             break
+
 
     resp_json = r.json()
 
@@ -78,6 +82,8 @@ if __name__ == "__main__":
     else:
         tab_number = 0
 
+    start_time = time.clock()
+
     print("You are driving this tab remotely:")
     print(resp_json[tab_number])
 
@@ -87,33 +93,30 @@ if __name__ == "__main__":
 
     # connect to first tab via the WS debug URL
     url_ws = str(target_tab['webSocketDebuggerUrl'])
-    ws = websocket.create_connection(url_ws)
-    mpl = MeasurePageLoad(ws, cutoff_time=cutoff_time, device=device, debug_port=debug_port, 
-                        network_type=network_type, location=location)
-    #mpl.sendMethod("Console.enable", None, True)
-    #mpl.sendMethod("Debugger.enable", None, False)
-    mpl.sendMethod("Network.enable", None, True)
-    mpl.sendMethod("Page.enable", None, True)
-    #mpl.sendMethod("Runtime.enable", None, True)
-    mpl.sendMethod("Timeline.start", None, True)
+    
+    mpl = MeasurePageLoad(url_ws, cutoff_time=cutoff_time, device=device, debug_port=debug_port, 
+                        network_type=network_type, location=location, output_dir=output_dir)
+
+    mpl.setupOutputDirs()
 
     for this_url in url_list:
+        try:
+            mpl.categories_and_ranks = url_list[this_url]['category_ranks']
+        except TypeError:
+            pass
+
         this_url = fixURL(this_url)
         
-        sample_num = 1
-        while sample_num <= num_samples:
+        for sample_num in range(1, num_samples+1):
             # run with ad-blocker ON
-            mpl.enableAdBlock()
-            mpl.clearAllCaches()
-            print("\nLoading "+this_url+" without ads.")
-            mpl.LoadPage_SaveData(output_dir, this_url, sample_num)
+            useAdBlocker = True
+            mpl.runMeasurements(useAdBlocker, this_url, sample_num)
 
             # run with ad-blocker OFF
-            mpl.disableAdBlock()
-            mpl.clearAllCaches()
-            print("\nLoading "+this_url+" with ads.")
-            mpl.LoadPage_SaveData(output_dir, this_url, sample_num)
-            sample_num += 1
+            useAdBlocker = False
+            mpl.runMeasurements(useAdBlocker, this_url, sample_num)
 
-    mpl.writeLog(output_dir)
+    mpl.writeLog(start_time, min_time)
+
+    print("TODO: add outgoing and incoming data")
 
