@@ -13,7 +13,7 @@ def parse_args():
     parser.add_argument('num_samples', type=int,
                     help="The number of times to load each page with and without ads.")
     parser.add_argument('url_list_file', type=str,
-                    help="A file containing an ordered list of urls to load.  Each page "
+                    help="A file containing a list or dict of urls to load.  Each page "
                         "is loaded for the amount of time specified by the cutoff_time argument.")
     parser.add_argument('output_dir', type=str,
                     help="A directory where the output data files will be written.")

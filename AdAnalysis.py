@@ -67,6 +67,7 @@ class AdAnalysis:
         device = self.getDevice(this_file)
         network_type = self.getNetworkType(this_file)
         cdf_key = device+"-"+network_type
+        return cdf_key
 
     def statsDiff(self, dictNoBlock, dictYesBlock, key):
         try:

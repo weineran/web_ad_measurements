@@ -139,7 +139,7 @@ def _getChromePath():
     '''
     path_to_chrome = raw_input("Enter the path to your Chrome Canary executable, or choose one of the options below.\n"+
                             "0. 'C:\Users\[username]\AppData\Local\Google\Chrome SxS\Application\chrome.exe' (normal path to Chrome Canary on Windows)\n"+
-                            "1. 'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe' (normal path to Chrome on Windows)"+
+                            "1. 'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe' (normal path to Chrome on Windows)\n"+
                             "2. 'open -a Google\ Chrome' (command to open Google Chrome on Mac)\n>")
     if path_to_chrome == '0':
         #username = raw_input("Enter your username\n>")
