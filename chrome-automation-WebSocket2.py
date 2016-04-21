@@ -2,7 +2,7 @@ import requests
 import time
 import json
 import argparse
-from MeasurePageLoad import MeasurePageLoad, connectToDevice, getNetworkType, shouldContinue, fixURL, getLocation, attemptConnection
+from MeasurePageLoad import MeasurePageLoad, connectToDevice, getNetworkType, shouldContinue, fixURL, getLocation, attemptConnection, getUserOS
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -43,6 +43,8 @@ if __name__ == "__main__":
     
     # connect to device
     device = connectToDevice(debug_port)
+
+    op_sys = getUserOS()
 
     # get location
     location = getLocation()
@@ -95,9 +97,17 @@ if __name__ == "__main__":
     url_ws = str(target_tab['webSocketDebuggerUrl'])
     
     mpl = MeasurePageLoad(url_ws, cutoff_time=cutoff_time, device=device, debug_port=debug_port, 
-                        network_type=network_type, location=location, output_dir=output_dir)
+                        network_type=network_type, location=location, output_dir=output_dir, op_sys=op_sys,
+                        start_time=start_time, min_time=min_time)
 
     mpl.setupOutputDirs()
+
+    # Do this once before we start
+    # Every other time it happens at end of runMeasurements
+    mpl.setupWebsocket()
+    mpl.clearAllCaches()
+    mpl.enableAdBlock()     # first run is with ad-blocker (without ads)
+    mpl.closeWebsocket()
 
     for this_url in url_list:
         try:
@@ -110,13 +120,18 @@ if __name__ == "__main__":
         for sample_num in range(1, num_samples+1):
             # run with ad-blocker ON
             useAdBlocker = True
+            msg = "\nLoading "+this_url+" without ads."
             mpl.runMeasurements(useAdBlocker, this_url, sample_num)
 
             # run with ad-blocker OFF
             useAdBlocker = False
+            msg = "\nLoading "+this_url+" with ads."
             mpl.runMeasurements(useAdBlocker, this_url, sample_num)
+        # end looping through sample_nums
+    # end looping through all urls
 
-    mpl.writeLog(start_time, min_time)
+
+    mpl.writeLog()
 
     print("TODO: add outgoing and incoming data")
 

@@ -118,7 +118,7 @@ def openChromeCanary(debug_port):
     command = [path_to_chrome, "--remote-debugging-port="+str(debug_port)]
     if user_data_dir != "":
         command.append("--user-data-dir="+str(user_data_dir))
-    print('Popening '+command)
+    print('Popening '+str(command))
     p_chrome = Popen(command)
 
 def shouldOpenChromeCanary():
@@ -163,6 +163,20 @@ def printAndCall(command):
     print("Calling '"+str(command)+"'")
     return call(command)
 
+def getUserOS():
+    op_sys = raw_input("What OS are you running this script on?\n"+
+                        "1. Windows\n"+
+                        "2. Mac OS\n"+
+                        "3. Linux (untested)\n>")
+    if op_sys == '1':
+        return "windows"
+    elif op_sys == '2':
+        return "mac"
+    elif op_sys == '3':
+        return "linux"
+    else:
+        print("Invalid selection.")
+        return getUserOS()
 
 
 class MeasurePageLoad:
@@ -173,7 +187,8 @@ class MeasurePageLoad:
     
     # constructor
     def __init__(self, url_ws, page_url = None, cutoff_time = None, device = "computer", debug_port=9222, 
-                 phone_adBlockPackage="com.savageorgiev.blockthis", network_type=None, location=None, output_dir=None):
+                 phone_adBlockPackage="com.savageorgiev.blockthis", network_type=None, location=None,
+                 output_dir=None, op_sys=None, start_time=None, min_time=None):
         self.url_ws = url_ws                 # url to use for the websocket.WebSocket object
         self.ws = None                      # websocket.Websocket object
         self.msg_list = []             # raw data - list of debug messages received from ws
@@ -181,7 +196,10 @@ class MeasurePageLoad:
         self.phone_adBlockPackage = phone_adBlockPackage
         self.location = location
         self.device = device           # "phone" or "computer"
+        self.op_sys = op_sys
         self.network_type = network_type
+        self.start_time = start_time
+        self.min_time = min_time
         self.sample_num = None
         self.hostname = None
         self.page_url = page_url
@@ -271,12 +289,12 @@ class MeasurePageLoad:
             json.dump(temp_dict, f)
 
 
-    def writeLog(self, start_time, min_time):
+    def writeLog(self):
         end_time = time.clock()
-        time_elapsed = end_time - start_time
-        self.logMsgs.append("Theoretical time spent loading pages: "+str(min_time*60))
+        time_elapsed = end_time - self.start_time
+        self.logMsgs.append("Theoretical time spent loading pages: "+str(self.min_time*60))
         self.logMsgs.append("Actual total time: "+str(time_elapsed))
-        self.logMsgs.append("Ratio: "+str(time_elapsed/(min_time*60)))
+        self.logMsgs.append("Ratio: "+str(time_elapsed/(self.min_time*60)))
         self.logMsgs.append("Web Socket create/close overhead: "+str(self.wsOverhead))
         self.logMsgs.append("Web Socket percent of total time: "+str(self.wsOverhead/time_elapsed))
 
@@ -562,8 +580,10 @@ class MeasurePageLoad:
         return
 
     def clearComputerDNScache(self):
-        command = "ipconfig /flushdns"
-        command = ["service", "nscd", "restart"]
+        if self.op_sys == 'windows':
+            command = "ipconfig /flushdns"
+        elif self.op_sys == 'mac' or self.op_sys == 'linux':
+            command = ["service", "nscd", "restart"]
         printAndCall(command)
 
     def clearPhoneDNScache(self):
@@ -1024,26 +1044,31 @@ class MeasurePageLoad:
     def runMeasurements(self, useAdBlock, this_url, sample_num):
         self.setupWebsocket()
 
-        if useAdBlock:
-            self.enableAdBlock()
-            msg = "\nLoading "+this_url+" without ads."
-        else:
-            self.disableAdBlock()
-            msg = "\nLoading "+this_url+" with ads."
+        # if useAdBlock:
+        #     self.enableAdBlock()
+        #     msg = "\nLoading "+this_url+" without ads."
+        # else:
+        #     self.disableAdBlock()
+        #     msg = "\nLoading "+this_url+" with ads."
 
-        self.clearAllCaches()
-        print(msg)
+        #self.clearAllCaches()
+        #print(msg)
 
-        self.closeWebsocket()   # added these two lines to try to correct pop frameLoad error
-        self.setupWebsocket()
+        #self.closeWebsocket()   # added these two lines to try to correct pop frameLoad error
+        #self.setupWebsocket()
 
         self.LoadPage_SaveData(this_url, sample_num)
+        self.clearAllCaches()    ###
+        if useAdBlock:
+            self.disableAdBlock()   # if we just used the adBlocker, disable it for next run
+        else:
+            self.enableAdBlock()    # if we just loaded without adBlocker, enable it for next run
         self.closeWebsocket()
 
     def closeWebsocket(self):
         ws_start = time.clock()
         print("Closing websocket.")
-        self.ws.close()
+        self.ws.close(timeout=0)  # I belive this was causing my frame pop errors b/c default was to wait 3 seconds for close frame
         self.ws = None
         ws_end = time.clock()
         self.wsOverhead += (ws_end - ws_start)
