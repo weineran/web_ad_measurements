@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     num_urls = len(url_list)
     min_time = num_urls * 2 * num_samples * cutoff_time/60.0
-    print("This will require at least "+str(min_time)+" minutes to complete.")
+    print("\nThis will require at least "+str(min_time)+" minutes to complete.")
     if not shouldContinue():
         print("Canceled.")
         exit()

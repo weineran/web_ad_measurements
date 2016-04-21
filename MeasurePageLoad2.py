@@ -659,6 +659,7 @@ class MeasurePageLoad:
                 try:
                     self.frames.pop(frameId)
                 except KeyError:
+                    print(resp)
                     self.writeRawDataToFile()
                     self.writeLog()
                     self.writeDataSummaryToFile()
