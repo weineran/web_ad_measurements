@@ -8,6 +8,84 @@ class AdAnalysis:
     def __init__(self):
         pass
 
+    def getXLabel(self, label_dict, attr):
+        attr_info = label_dict[attr]
+        line1 = attr_info[0]+'\n'
+        event = attr_info[2]
+        if event == "DOM":
+            line2 = "(cutoff at DOMContentLoaded event)\n"
+        elif event == "Load":
+            line2 = "(cutoff at page Load event)\n"
+        elif event == "Final":
+            line2 = "(Loading finished or cutoff time reached)\n"
+        else:
+            print("invalid event: "+str(event))
+            raise
+        return line1+line2
+
+    def getKeyAndVal(self, attr, dictNoBlock, dictYesBlock, file_flag, event):
+        """
+        returns a list: [cdf_key, datapoint]
+        """
+        if file_flag == True:
+            datapoint = self.getValAtEvent(attr, dictYesBlock, event)
+        elif file_flag == False:
+            datapoint = self.getValAtEvent(attr, dictNoBlock, event)
+        elif file_flag == "Diff":
+            try:
+                datapoint = self.getValAtEvent(attr, dictNoBlock, event) - self.getValAtEvent(attr, dictYesBlock, event)
+            except TypeError:
+                datapoint = None
+        else:
+            print("invalid file_flag: "+str(file_flag))
+            raise
+
+        cdf_key = self.getCDFKey(dictYesBlock)
+        return [cdf_key, datapoint]
+
+    def getValAtEvent(self, attr, the_dict, event):
+        if event == "Final":
+            datapoint = the_dict[attr]
+        elif event == "DOM":
+            try:
+                datapoint = the_dict['statsAtDOMEvent'][attr]
+            except KeyError:
+                datapoint = None
+        elif event == "Load":
+            try:
+                datapoint = the_dict['statsAtOnLoadEvent'][attr]
+            except KeyError:
+                datapoint = None
+        else:
+            print("invalid event: "+str(event))
+            raise
+
+        return datapoint
+
+    def getCDFKey(self, the_dict):
+        this_file = the_dict['rawDataFile']
+        device = self.getDevice(this_file)
+        network_type = self.getNetworkType(this_file)
+        cdf_key = device+"-"+network_type
+
+    def statsDiff(self, dictNoBlock, dictYesBlock, key):
+        try:
+            return dictNoBlock[key] - dictYesBlock[key]
+        except:
+            return None
+
+    def DOMDiff(self, dictNoBlock, dictYesBlock, key):
+        try:
+            return dictNoBlock['statsAtDOMEvent'][key] - dictYesBlock['statsAtDOMEvent'][key]
+        except:
+            return None
+
+    def LoadDiff(self, dictNoBlock, dictYesBlock, key):
+        try:
+            return dictNoBlock['statsAtOnLoadEvent'][key] - dictYesBlock['statsAtOnLoadEvent'][key]
+        except:
+            return None
+
     #@staticmethod
     def getAdFileMatch(self, this_file, data_file_list):
         if self.isBlocking(this_file):
@@ -75,6 +153,12 @@ class AdAnalysis:
 
     def getSampleNum(self, this_file):
         return self.getAttr(4, this_file)
+
+    def getDevice(self, this_file):
+        return self.getAttr(1, this_file)
+
+    def getNetworkType(self, this_file):
+        return self.getAttr(2, this_file)
 
     def isLog(self, this_file):
         if this_file[-3:] == "log":
