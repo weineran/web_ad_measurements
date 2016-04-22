@@ -688,11 +688,14 @@ class MeasurePageLoad:
                 try:
                     self.frames.pop(frameId)
                 except KeyError:
-                    print(resp)
-                    self.writeRawDataToFile()
-                    self.writeLog()
-                    self.writeDataSummaryToFile()
-                    raise
+                    log_msg = "frameStoppedLoading KeyError: "+self.rawData_fname+" "+str(resp)
+                    self.logMsgs.append(log_msg)
+
+                    # print(resp)
+                    # self.writeRawDataToFile()
+                    # self.writeLog()
+                    # self.writeDataSummaryToFile()
+                    # raise
 
 
     #@timeout(3)

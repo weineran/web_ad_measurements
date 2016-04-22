@@ -5,8 +5,18 @@ loaded_statuses = [200]
 class AdAnalysis:
 
     #constructor
-    def __init__(self):
+    def __init__(self, summaries_file_list):
+        self.summaries_file_list = summaries_file_list
+        self.max_sample_num = self.getMaxSampleNum()
         pass
+
+    def getMaxSampleNum(self):
+        max_sample_num = 0
+        for filename in self.summaries_file_list:
+            this_num = int(self.getSampleNum(filename))
+            if this_num > max_sample_num:
+                max_sample_num = this_num
+        return max_sample_num
 
     def getXLabel(self, label_dict, attr):
         attr_info = label_dict[attr]
@@ -25,7 +35,7 @@ class AdAnalysis:
 
     def getKeyAndVal(self, attr, dictNoBlock, dictYesBlock, file_flag, event):
         """
-        returns a list: [cdf_key, datapoint]
+        returns a dict: {'cdf_key': cdf_key, 'datapoint': datapoint}
         """
         if file_flag == True:
             datapoint = self.getValAtEvent(attr, dictYesBlock, event)
@@ -41,7 +51,26 @@ class AdAnalysis:
             raise
 
         cdf_key = self.getCDFKey(dictYesBlock)
-        return [cdf_key, datapoint]
+        return {'cdf_key': cdf_key, 'datapoint': datapoint}
+
+    def getDatapoint(self, attr, dictNoBlock, dictYesBlock, file_flag, event):
+        """
+        returns a the datapoint for the given attribute
+        """
+        if file_flag == True:
+            datapoint = self.getValAtEvent(attr, dictYesBlock, event)
+        elif file_flag == False:
+            datapoint = self.getValAtEvent(attr, dictNoBlock, event)
+        elif file_flag == "Diff":
+            try:
+                datapoint = self.getValAtEvent(attr, dictNoBlock, event) - self.getValAtEvent(attr, dictYesBlock, event)
+            except TypeError:
+                datapoint = None
+        else:
+            print("invalid file_flag: "+str(file_flag))
+            raise
+
+        return datapoint
 
     def getValAtEvent(self, attr, the_dict, event):
         if event == "Final":
@@ -63,7 +92,10 @@ class AdAnalysis:
         return datapoint
 
     def getCDFKey(self, the_dict):
-        this_file = the_dict['rawDataFile']
+        if type(the_dict) == type(""):
+            this_file = the_dict
+        else:
+            this_file = the_dict['rawDataFile']
         device = self.getDevice(this_file)
         network_type = self.getNetworkType(this_file)
         cdf_key = device+"-"+network_type
@@ -109,13 +141,24 @@ class AdAnalysis:
         else:
             return None
 
+    def getListOfPairs(self, summary_file, summaries_file_list):
+        the_list = []
+        blocking_file = summary_file
+        for i in range(0, self.max_sample_num):
+            this_pair = (blocking_file, self.getMatchButFalse(blocking_file, summaries_file_list))
+            the_list.append(this_pair)
+            sample_num = self.getSampleNum(blocking_file)
+            blocking_file = blocking_file.replace('-'+sample_num+'-', '-'+str(int(sample_num)+1)+'-',1)
+
+        return the_list
+
     #@staticmethod
     def getChronFileList(self, this_file, data_file_list):
         chron_file_list = [this_file]
         curr_file = this_file
         while True:
             sample_num = self.getSampleNum(curr_file)
-            target_fname = curr_file.replace(sample_num, str(int(sample_num)+1),1)
+            target_fname = curr_file.replace('-'+sample_num+'-', '-'+str(int(sample_num)+1)+'-',1)
             if target_fname in data_file_list:
                 chron_file_list.append(target_fname)
                 curr_file = target_fname
