@@ -56,6 +56,7 @@ def connectToDevice(debug_port):
     Asks the user which device to drive.  Makes a command line call to connect to that device.
     '''
     print("")
+    op_sys = getUserOS()
     choice_num = input("\nDo you want to drive Chrome on your phone or on your computer?\n"+
                         "Chrome on phone    - enter '1'\n"+
                         "Chrome on computer - enter '2'\n>")
@@ -70,12 +71,12 @@ def connectToDevice(debug_port):
     elif choice_num == 2:
         device = "computer"
         if shouldOpenChromeCanary():
-            openChromeCanary(debug_port)
+            openChromeCanary(debug_port, op_sys)
     else:
         print("ERR: Invalid choice.")
         raise
 
-    return device
+    return device, op_sys
 
 def fixURL(url):
     if not urlHasScheme(url):
@@ -109,13 +110,27 @@ def getNetworkType(device):
         print("Invalid response.  Please try again.")
         return getNetworkType(device)
 
-def openChromeCanary(debug_port):
+def openChromeCanary(debug_port, op_sys):
     path_to_chrome = _getChromePath()
-    user_data_dir = _getUserDataDir()
+    user_data_dir = _getUserDataDir(op_sys)
     # command = '"' + path_to_chrome + '" --remote-debugging-port='+str(debug_port)
     # if user_data_dir != "":
     #     command = command +  ' --user-data-dir="'+str(user_data_dir)+'"'
-    command = [path_to_chrome, "--remote-debugging-port="+str(debug_port)]
+    command = []
+    rdp_flag = "--remote-debugging-port="+str(debug_port)
+    if op_sys == "mac" or op_sys == "linux":
+        path_to_chrome = path_to_chrome.replace('\ ', '____')
+        path_to_chrome = path_to_chrome.split(' ')
+        path_to_chrome = [elem.replace('____', ' ') for elem in path_to_chrome]
+        command = path_to_chrome
+        command.append("--args")
+        command.append(rdp_flag)
+        print(str(path_to_chrome))
+        print(str(command))
+    else:
+        command = [path_to_chrome, rdp_flag]
+
+    print(str(command))
     if user_data_dir != "":
         command.append("--user-data-dir="+str(user_data_dir))
     print('Popening '+str(command))
@@ -152,12 +167,15 @@ def _getChromePath():
         path_to_chrome = "open -a Google\ Chrome"
     return path_to_chrome
 
-def _getUserDataDir():
+def _getUserDataDir(op_sys):
     user_data_dir = raw_input("Enter the path to the Chrome --user-data-dir you wish to use.\n"+
                             "This should be different than the default user data directory.\n>")
     if user_data_dir == 'a':
         # easter egg for me
-        user_data_dir = "C:\Users\Andrew\OneDrive\Documents\Northwestern\Research\web_ads\chrome-profile"
+        if op_sys == "windows":
+            user_data_dir = "C:\Users\Andrew\OneDrive\Documents\Northwestern\Research\web_ads\chrome-profile"
+        else:
+            user_data_dir = "/Users/andrew/Documents/Northwestern/Research/web-ads/chrome-profile"
 
     return user_data_dir
 
@@ -416,10 +434,14 @@ class MeasurePageLoad:
     def _disableAdBlockComputer(self):
         dst_url = "chrome://extensions/"
         self.loadURLandWait(dst_url)
+        if self.op_sys == 'windows':
+            num_tabs = 5
+        else:
+            num_tabs = 6
 
         # tab 5 times
         tab_key = "U+0009"
-        self.pressKeyKtimes(tab_key, 5)
+        self.pressKeyKtimes(tab_key, num_tabs)
 
         # then space bar
         space_bar = "U+0020"
@@ -433,10 +455,14 @@ class MeasurePageLoad:
     def _enableAdBlockComputer(self):
         dst_url = "chrome://extensions/"
         self.loadURLandWait(dst_url)
+        if self.op_sys == "windows":
+            num_tabs = 3
+        else:
+            num_tabs = 4
 
         # tab 3 times
         tab_key = "U+0009"
-        self.pressKeyKtimes(tab_key, 3)
+        self.pressKeyKtimes(tab_key, num_tabs)
 
         # then space bar
         space_bar = "U+0020"
@@ -587,8 +613,11 @@ class MeasurePageLoad:
     def clearComputerDNScache(self):
         if self.op_sys == 'windows':
             command = "ipconfig /flushdns"
-        elif self.op_sys == 'mac' or self.op_sys == 'linux':
+        elif self.op_sys == 'linux':
             command = ["service", "nscd", "restart"]
+        elif self.op_sys == 'mac':
+            command = "sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder"
+            command = command.split(' ')
         printAndCall(command)
 
     def clearPhoneDNScache(self):

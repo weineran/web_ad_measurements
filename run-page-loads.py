@@ -42,9 +42,7 @@ if __name__ == "__main__":
         exit()
     
     # connect to device
-    device = connectToDevice(debug_port)
-
-    op_sys = getUserOS()
+    device, op_sys = connectToDevice(debug_port)
 
     # get location
     location = getLocation()
