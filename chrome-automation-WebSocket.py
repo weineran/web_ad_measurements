@@ -8,6 +8,8 @@ import os
 from subprocess import call
 from urlparse import urlparse
 
+# TODO: make a class called MeasurePageLoad and move methods _getFirstTimestamp, 
+# _getDataUntilCutoff, LoadPage_SaveData into class
 
 def parse_args():
     parser = argparse.ArgumentParser(
