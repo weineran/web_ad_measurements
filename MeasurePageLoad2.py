@@ -351,6 +351,22 @@ class MeasurePageLoad:
             else:
                 print("received: "+resp)
 
+        return resp_obj
+
+    def getRespMethod(self, resp_obj):
+        try:
+            method = resp_obj['params']['method']
+        except KeyError:
+            method = None
+        return method
+
+    def getRespURL(self, resp_obj):
+        try:
+            url = resp_obj['params']['url']
+        except KeyError:
+            url = None
+        return url
+
     def isAdBlockEnabled(self):
         if self.device == "computer":
             return self.isAdBlockEnabledComputer()
@@ -669,7 +685,8 @@ class MeasurePageLoad:
             printAndCall(command)
 
         params = {'url': dst_url}
-        self.sendMethod('Page.navigate', params, True)
+        resp = self.sendMethod('Page.navigate', params, True)
+        return resp
 
     def _updateFrameDict(self, resp):
         try:
@@ -1043,12 +1060,15 @@ class MeasurePageLoad:
         self.summary_fname = self.rawData_fname[:-4]+"-summary.json"
 
         # Tell browser to load the desired page
-        self.navToURL(self.page_url)
+        resp = self.navToURL(self.page_url)
+        resp_method = self.getRespMethod(resp)
 
-        # get data and put in msg_list
-        #first_timestamp = self._getFirstTimestamp()
-        #self.first_timestamp = time.time()
-        self._getDataUntilCutoff()
+        # if the certificate is invalid, it immediately(?) gives Page.interstitialShown response
+        if resp == "Page.interstitialShown":
+            self.handleInvalidCert(resp)
+        else:
+            # get data and put in msg_list
+            self._getDataUntilCutoff()
 
         # save data to file
         self.writeRawDataToFile()
@@ -1056,6 +1076,10 @@ class MeasurePageLoad:
 
         # reset attributes for next page load
         self.resetAttributes()
+
+    def handleInvalidCert(self, resp_obj):
+        self.logMsgs.append("Possible invalid certificate encountered. Skipping page: "+self.page_url+" "+self.rawData_fname+" "+str(resp_obj))
+        # Note, already being optionally logged to msg_list in _getNextWsResp(LOGRESPONSES)
 
     def dumpDataToJSON(self):
         output_file_path = os.path.join(self.output_dir, self.rawData_fname[:-4]+".json")
