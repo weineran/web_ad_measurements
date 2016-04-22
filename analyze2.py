@@ -40,7 +40,7 @@ if __name__ == "__main__":
     # prep directories
     raw_data_dir = os.path.join(data_dir, "raw")
     summaries_dir = os.path.join(data_dir, "summaries")
-    fig_dir = os.path.join(data_dir, "figs5")
+    fig_dir = os.path.join(data_dir, "figs6")
     raw_data_file_list = os.listdir(raw_data_dir)
     summaries_file_list = os.listdir(summaries_dir)
     if not os.path.isdir(fig_dir):
@@ -138,7 +138,7 @@ if __name__ == "__main__":
 
 
     for cdf in cdf_list:
-        cdf.plot(plotdir=fig_dir, title="", legend="lower right")
+        cdf.plot(plotdir=fig_dir, title="", legend="lower right", lw=1.5)#styles={'linewidth':0.5})
 
     pageloadData2 = sorted(pageloadData, key=lambda elem: elem[1])
     for elem in pageloadData2:
