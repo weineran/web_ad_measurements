@@ -313,7 +313,7 @@ class MeasurePageLoad:
 
     def writeLog(self):
         print("Writing log file.")
-        end_time = time.clock()
+        end_time = time.time()
         time_elapsed = end_time - self.start_time
         self.logMsgs.append("Theoretical time spent loading pages: "+str(self.min_time*60))
         self.logMsgs.append("Actual total time: "+str(time_elapsed))
@@ -1094,7 +1094,7 @@ class MeasurePageLoad:
                 f.write(json.dumps(this_item)+"\n")
 
     def setupWebsocket(self):
-        ws_start = time.clock()
+        ws_start = time.time()
         msg = "Opening websocket."
         self.msg_list.append(msg)
         print(msg)
@@ -1105,7 +1105,7 @@ class MeasurePageLoad:
         self.sendMethod("Page.enable", None, True)
         #mpl.sendMethod("Runtime.enable", None, True)
         self.sendMethod("Timeline.start", None, True)
-        ws_end = time.clock()
+        ws_end = time.time()
         self.wsOverhead += (ws_end - ws_start)
 
     def runMeasurements(self, useAdBlock, this_url, sample_num):
@@ -1133,13 +1133,13 @@ class MeasurePageLoad:
         self.closeWebsocket()
 
     def closeWebsocket(self):
-        ws_start = time.clock()
+        ws_start = time.time()
         msg = "Closing websocket"
         self.msg_list.append(msg)
         print(msg)
         self.ws.close(timeout=0)  # I belive this was causing my frame pop errors b/c default was to wait 3 seconds for close frame
         self.ws = None
-        ws_end = time.clock()
+        ws_end = time.time()
         self.wsOverhead += (ws_end - ws_start)
 
     def setupOutputDirs(self):

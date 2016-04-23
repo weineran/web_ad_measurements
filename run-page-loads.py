@@ -82,7 +82,7 @@ if __name__ == "__main__":
     else:
         tab_number = 0
 
-    start_time = time.clock()
+    start_time = time.time()
 
     print("You are driving this tab remotely:")
     print(resp_json[tab_number])
