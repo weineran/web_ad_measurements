@@ -19,6 +19,11 @@ LABEL_DICT = {"Final-numBlockedExplicitly": ["\nNumber of objects directly block
             "DOM-cumulativeEncodedDataLength_LF": ["\nAmount of extra data transferred with ad-blocker disabled (KB)", "Diff", "DOM"],
             "Load-cumulativeEncodedDataLength_LF": ["\nAmount of extra data transferred with ad-blocker disabled (KB)", "Diff", "Load"]}
 
+# NOTE: other way to make CDF
+# http://statsmodels.sourceforge.net/stable/generated/statsmodels.tools.tools.ECDF.html
+# linedata = statsmodels.distributions.ECDF(raw_data)
+# plt.plot(linedata.x, linedata.y)
+
 def parse_args():
     parser = argparse.ArgumentParser(
             description='analyze data')
