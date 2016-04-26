@@ -201,6 +201,9 @@ class AdAnalysis:
     def getDevice(self, this_file):
         return self.getAttr(1, this_file)
 
+    def getHostname(self, this_file):
+        return self.getAttr(5, this_file)
+
     def getNetworkType(self, this_file):
         return self.getAttr(2, this_file)
 
