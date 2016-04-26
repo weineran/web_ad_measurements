@@ -16,9 +16,15 @@ def parse_args():
                     help="File providing categories and cutoff ranks for each.")
     parser.add_argument('output_fname', type=str,
                     help="The file name to use for the output list.")
+    parser.add_argument('--exclude_list', type=str,
+                    help="A .json file containing hostnames to exclude.  This is useful if, for example, "+
+                    "you already have data for the top 10 and want to collect data for ranks 10-20.")
     return parser.parse_args()
 
-def shouldInclude(hostname, hostname_dict, conditions_dict):
+def shouldInclude(hostname, hostname_dict, conditions_dict, exclude_dict):
+    if hostname in exclude_dict:
+        return False
+        
     for category in hostname_dict['category_ranks']:
         cutoff = max(int((conditions_dict[category]['rank_cutoff'])), int(conditions_dict['all']['rank_cutoff']))
         if hostname_dict['category_ranks'][category] <= cutoff:
@@ -31,10 +37,16 @@ if __name__ == "__main__":
     master_list_file = args.master_list_file
     conditions_file = args.conditions_file
     output_fname = args.output_fname
+    exclude_list = args.exclude_list
 
     # get json master list
     f = open(master_list_file, 'r')
     master_dict = json.load(f)
+    f.close()
+
+    # get json exclude_list
+    f = open(exclude_list, 'r')
+    exclude_dict = json.load(f)
     f.close()
 
     # get conditions as dict
@@ -45,7 +57,7 @@ if __name__ == "__main__":
     # loop through master list
     output_dict = {}
     for hostname in master_dict:
-        if shouldInclude(hostname, master_dict[hostname], conditions_dict):
+        if shouldInclude(hostname, master_dict[hostname], conditions_dict, exclude_dict):
             output_dict[hostname] = master_dict[hostname]
 
     # dump output_dict to file

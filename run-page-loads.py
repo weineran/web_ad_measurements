@@ -2,7 +2,8 @@ import requests
 import time
 import json
 import argparse
-from MeasurePageLoad2 import MeasurePageLoad, connectToDevice, getNetworkType, shouldContinue, fixURL, getLocation, attemptConnection, getUserOS
+from MeasurePageLoad2 import MeasurePageLoad, connectToDevice, getNetworkType, shouldContinue
+from MeasurePageLoad2 import fixURL, getLocation, attemptConnection, getUserOS, getScreenDimensions
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -49,6 +50,13 @@ if __name__ == "__main__":
 
     # get network connection type
     network_type = getNetworkType(device)
+
+    # get screen dimensions
+    if device == "phone":
+        screen_width, screen_height = getScreenDimensions()
+    else:
+        screen_width = None
+        screen_height = None
     
     # Connect to phone and gather json info
     remote_debug_url = "http://localhost:"+str(debug_port)+"/json"
@@ -96,7 +104,7 @@ if __name__ == "__main__":
     
     mpl = MeasurePageLoad(url_ws, cutoff_time=cutoff_time, device=device, debug_port=debug_port, 
                         network_type=network_type, location=location, output_dir=output_dir, op_sys=op_sys,
-                        start_time=start_time, min_time=min_time)
+                        start_time=start_time, min_time=min_time, screen_width=screen_width, screen_height=screen_height)
 
     mpl.setupOutputDirs()
 
