@@ -65,15 +65,15 @@ if __name__ == "__main__":
     for summary_file in summaries_file_list:
 
         # make list of hostnames that have been measured
-        this_hostname = aa.getHostname(summary_file)
-        this_device = aa.getDevice(summary_file)
-        if this_device == "phone":
-            phone_measured_dict[this_hostname] = True
-        elif this_device == "computer":
-            computer_measured_dict[this_hostname] = True
-        else:
-            print("invalid device: "+str(this_device))
-            raise
+        # this_hostname = aa.getHostname(summary_file)
+        # this_device = aa.getDevice(summary_file)
+        # if this_device == "phone":
+        #     phone_measured_dict[this_hostname] = True
+        # elif this_device == "computer":
+        #     computer_measured_dict[this_hostname] = True
+        # else:
+        #     print("invalid device: "+str(this_device))
+        #     raise
 
         if aa.isBlocking(summary_file):
             # map summary files with ad-blocker to summary files without ad-blocker
@@ -89,12 +89,12 @@ if __name__ == "__main__":
             chron_compare_dict[summary_file] = chron_list
 
     # dump list of measured hostnames to file
-    phone_list_path = os.path.join(data_dir, "phone_measured.json")
-    computer_list_path = os.path.join(data_dir, "computer_measured.json")
-    with open(phone_list_path, 'w') as f:
-        json.dump(phone_measured_dict, f)
-    with open(computer_list_path, 'w') as f:
-        json.dump(computer_measured_dict, f)
+    # phone_list_path = os.path.join(data_dir, "phone_measured.json")
+    # computer_list_path = os.path.join(data_dir, "computer_measured.json")
+    # with open(phone_list_path, 'w') as f:
+    #     json.dump(phone_measured_dict, f)
+    # with open(computer_list_path, 'w') as f:
+    #     json.dump(computer_measured_dict, f)
 
     page_stats = {}
 
