@@ -50,7 +50,7 @@ if __name__ == "__main__":
     # prep directories
     raw_data_dir = os.path.join(data_dir, "raw")
     summaries_dir = os.path.join(data_dir, "summaries")
-    fig_dir = os.path.join(data_dir, "figs")
+    fig_dir = os.path.join(data_dir, "figs2")
     raw_data_file_list = os.listdir(raw_data_dir)
     summaries_file_list = os.listdir(summaries_dir)
     if not os.path.isdir(fig_dir):
@@ -120,6 +120,9 @@ if __name__ == "__main__":
             blocking_summary_file = file_pair[0]
             nonblocking_summary_file = file_pair[1]
 
+            if nonblocking_summary_file == None or blocking_summary_file == None:
+                continue
+
             # open the pair of files
             full_path_blocking = os.path.join(summaries_dir, blocking_summary_file)
             f = open(full_path_blocking, 'r')
@@ -175,10 +178,10 @@ if __name__ == "__main__":
 
             if avg_datapoint != None and len(datapoint_list) != 0:
                 #cdf.insert(cdf_key+" (avg)", avg_datapoint)
-                cdf.insert(cdf_key+" (med)", med_datapoint)
-                for category in categories_dict:
-                    if categories_dict[category] <= rank_cutoff:
-                        cdf.insert(cdf_key+"-"+category+" (med)", med_datapoint)
+                cdf.insert(cdf_key+" (median)", med_datapoint)
+                # for category in categories_dict:
+                #     if categories_dict[category] <= rank_cutoff:
+                #         cdf.insert(cdf_key+"-"+category+" (med)", med_datapoint)
 
 
     for cdf in cdf_list:
