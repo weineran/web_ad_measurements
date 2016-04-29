@@ -13,6 +13,8 @@ class AdAnalysis:
     def getMaxSampleNum(self):
         max_sample_num = 0
         for filename in self.summaries_file_list:
+            if filename[0] == '.':
+                continue
             this_num = int(self.getSampleNum(filename))
             if this_num > max_sample_num:
                 max_sample_num = this_num
