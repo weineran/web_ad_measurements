@@ -38,6 +38,44 @@ def attemptConnection(remote_debug_url):
             print("Invalid response.  We will try connecting again.")
             return "try_again"
 
+def getTabNumber(resp_json):
+    print("\nThere are "+str(len(resp_json)) + " available tabs:")
+    i = 0
+    for this_tab in resp_json:
+        try:
+            page_title = str(this_tab["title"])
+        except:
+            page_title = "ERR: unable to read page title"
+        print(str(i)+": "+page_title)
+        i += 1
+    tab_number = input("\nWhich tab would you like to drive remotely (0-"+str(len(resp_json)-1)+")?\n"+
+                        "(Recommendation: Choose the tab that is active)\n>")
+    return tab_number
+
+def getTabsJSON(debug_port):
+    remote_debug_url = "http://localhost:"+str(debug_port)+"/json"
+    while True:
+        print("Opening websocket remote debugging connection to "+remote_debug_url)
+        r = attemptConnection(remote_debug_url)
+        if r == "try_again":
+            pass
+        elif r == "give_up":
+            resp_json = {}
+            shouldQuit = True
+            return resp_json, shouldQuit
+        else:
+            break
+    resp_json = r.json()
+    shouldQuit = False
+    return resp_json, shouldQuit
+
+def getScreenDimensions():
+    print("\nPlease provide the screen dimensions of your phone.")
+    print("(This is needed for passing input events such as screen taps)")
+    screen_width = input("screen width>")
+    screen_height = input("screen height>")
+    return screen_width, screen_height
+
 def shouldContinue():
     resp = raw_input("Would you like to continue? (y or n)\n>")
     if resp.lower() == 'y':
@@ -49,7 +87,7 @@ def shouldContinue():
         return shouldContinue()
 
 def getLocation():
-    return raw_input("What is your location?\n(e.g. 'home'. Needed for filename convention)\n>")
+    return raw_input("\nWhat is your location?\n(e.g. 'home'. Needed for filename convention)\n>")
 
 def connectToDevice(debug_port):
     '''
@@ -92,7 +130,7 @@ def urlHasScheme(url):
 
 def getNetworkType(device):
     if device == "phone":
-        valid_resp_list = ["wifi", "4g"]
+        valid_resp_list = ["wifi", "4g", "3g"]
     elif device == "computer":
         valid_resp_list = ["wifi", "wired"]
     else:
@@ -209,7 +247,7 @@ class MeasurePageLoad:
     # constructor
     def __init__(self, url_ws, page_url = None, cutoff_time = None, device = "computer", debug_port=9222, 
                  phone_adBlockPackage="com.savageorgiev.blockthis", network_type=None, location=None,
-                 output_dir=None, op_sys=None, start_time=None, min_time=None):
+                 output_dir=None, op_sys=None, start_time=None, min_time=None, screen_width=None, screen_height=None):
         self.url_ws = url_ws                 # url to use for the websocket.WebSocket object
         self.ws = None                      # websocket.Websocket object
         self.msg_list = []             # raw data - list of debug messages received from ws
@@ -217,6 +255,8 @@ class MeasurePageLoad:
         self.phone_adBlockPackage = phone_adBlockPackage
         self.location = location
         self.device = device           # "phone" or "computer"
+        self.screen_width = screen_width
+        self.screen_height = screen_height
         self.op_sys = op_sys
         self.network_type = network_type
         self.start_time = start_time
@@ -295,7 +335,10 @@ class MeasurePageLoad:
         except (TypeError, KeyError):
             temp_dict['time_onLoad'] = None
 
-        temp_dict['time_finishLoad'] = self.timings['last_timestamp'] - self.timings['first_timestamp']
+        try:
+            temp_dict['time_finishLoad'] = self.timings['last_timestamp'] - self.timings['first_timestamp']
+        except (TypeError, KeyError):
+            temp_dict['time_finishLoad'] = None
 
         # objects counts
         temp_dict['statsAtDOMEvent'] = self.statsAtDOMEvent
@@ -313,7 +356,7 @@ class MeasurePageLoad:
 
     def writeLog(self):
         print("Writing log file.")
-        end_time = time.clock()
+        end_time = time.time()
         time_elapsed = end_time - self.start_time
         self.logMsgs.append("Theoretical time spent loading pages: "+str(self.min_time*60))
         self.logMsgs.append("Actual total time: "+str(time_elapsed))
@@ -350,6 +393,22 @@ class MeasurePageLoad:
                 print("received: "+resp[:100]+"...")
             else:
                 print("received: "+resp)
+
+        return resp_obj
+
+    def getRespMethod(self, resp_obj):
+        try:
+            method = resp_obj['method']
+        except KeyError:
+            method = None
+        return method
+
+    def getRespURL(self, resp_obj):
+        try:
+            url = resp_obj['params']['url']
+        except KeyError:
+            url = None
+        return url
 
     def isAdBlockEnabled(self):
         if self.device == "computer":
@@ -479,8 +538,12 @@ class MeasurePageLoad:
         printAndCall(command)
         
         # then tap start button
-        tap_xcoord = 525
-        tap_ycoord = 925
+        # screen_width = 720
+        # screen_height = 1280
+        tap_xcoord = self.screen_width / 3
+        tap_ycoord = self.screen_height / 2
+        # tap_xcoord = 525
+        # tap_ycoord = 925
         self.waitForBlockThisStartBtn(tap_xcoord, tap_ycoord)
         # command = "adb shell input tap "+str(tap_xcoord)+" "+str(tap_ycoord)
         command = ["adb", "shell", "input", "tap", str(tap_xcoord), str(tap_ycoord)]
@@ -669,7 +732,8 @@ class MeasurePageLoad:
             printAndCall(command)
 
         params = {'url': dst_url}
-        self.sendMethod('Page.navigate', params, True)
+        resp = self.sendMethod('Page.navigate', params, True)
+        return resp
 
     def _updateFrameDict(self, resp):
         try:
@@ -788,6 +852,8 @@ class MeasurePageLoad:
             self.handleRespNoneMethod(resp)
         else:
             self.handleRespMethod(resp, method)
+
+        return method
 
     def handleRespPage(self, resp, method):
         self.stats['PageEventCount'] += 1
@@ -950,7 +1016,10 @@ class MeasurePageLoad:
         #this_resp = "{'None': None}"
         while True:
             this_resp = self._getNextWsResp(True)   # returns json obj
-            self.processResp(this_resp)
+            method = self.processResp(this_resp)
+            if method == "Page.interstitialShown":
+                self.handleInvalidCert(this_resp)
+                return
 
             try:
                 self.timings['last_timestamp'] = this_resp["params"]["timestamp"]
@@ -1043,12 +1112,18 @@ class MeasurePageLoad:
         self.summary_fname = self.rawData_fname[:-4]+"-summary.json"
 
         # Tell browser to load the desired page
-        self.navToURL(self.page_url)
+        resp = self.navToURL(self.page_url)
+        resp_method = self.getRespMethod(resp)
+        #print("resp_method: "+resp_method)
 
-        # get data and put in msg_list
-        #first_timestamp = self._getFirstTimestamp()
-        #self.first_timestamp = time.time()
-        self._getDataUntilCutoff()
+        # if the certificate is invalid, it immediately(?) gives Page.interstitialShown response
+        if resp_method == "Page.interstitialShown":
+            #print("resp is interstitialShown")
+            self.handleInvalidCert(resp)
+        else:
+            # get data and put in msg_list
+            #print("moving on to _getDataUntilCutoff")
+            self._getDataUntilCutoff()
 
         # save data to file
         self.writeRawDataToFile()
@@ -1056,6 +1131,12 @@ class MeasurePageLoad:
 
         # reset attributes for next page load
         self.resetAttributes()
+
+    def handleInvalidCert(self, resp_obj):
+        msg = "Possible invalid certificate encountered. Skipping page: "+self.page_url+" "+self.rawData_fname+" "+str(resp_obj)
+        self.logMsgs.append(msg)
+        # Note, already being optionally logged to msg_list in _getNextWsResp(LOGRESPONSES)
+        print(msg)
 
     def dumpDataToJSON(self):
         output_file_path = os.path.join(self.output_dir, self.rawData_fname[:-4]+".json")
@@ -1070,22 +1151,39 @@ class MeasurePageLoad:
                 f.write(json.dumps(this_item)+"\n")
 
     def setupWebsocket(self):
-        ws_start = time.clock()
+        ws_start = time.time()
         msg = "Opening websocket."
         self.msg_list.append(msg)
         print(msg)
-        self.ws = websocket.create_connection(self.url_ws)
+        try:
+            self.ws = websocket.create_connection(self.url_ws)
+        except Exception as e:
+            ws_end = time.time()
+            self.wsOverhead += (ws_end - ws_start)
+            print(str(e))
+            print("Failed to connect to websocket.")
+            resp_json, shouldQuit = getTabsJSON(self.debug_port)
+            tab_number = getTabNumber(resp_json)
+            print("You are driving this tab remotely:")
+            print(resp_json[tab_number])
+            target_tab = resp_json[tab_number]
+            self.url_ws = str(target_tab['webSocketDebuggerUrl'])
+            return False
+
         #mpl.sendMethod("Console.enable", None, True)
         #mpl.sendMethod("Debugger.enable", None, False)
         self.sendMethod("Network.enable", None, True)
         self.sendMethod("Page.enable", None, True)
         #mpl.sendMethod("Runtime.enable", None, True)
         self.sendMethod("Timeline.start", None, True)
-        ws_end = time.clock()
+        ws_end = time.time()
         self.wsOverhead += (ws_end - ws_start)
+        return True
 
     def runMeasurements(self, useAdBlock, this_url, sample_num):
-        self.setupWebsocket()
+        didSucceed = False
+        while didSucceed == False:
+            didSucceed = self.setupWebsocket()
 
         # if useAdBlock:
         #     self.enableAdBlock()
@@ -1109,13 +1207,13 @@ class MeasurePageLoad:
         self.closeWebsocket()
 
     def closeWebsocket(self):
-        ws_start = time.clock()
+        ws_start = time.time()
         msg = "Closing websocket"
         self.msg_list.append(msg)
         print(msg)
         self.ws.close(timeout=0)  # I belive this was causing my frame pop errors b/c default was to wait 3 seconds for close frame
         self.ws = None
-        ws_end = time.clock()
+        ws_end = time.time()
         self.wsOverhead += (ws_end - ws_start)
 
     def setupOutputDirs(self):
