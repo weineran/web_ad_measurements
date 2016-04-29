@@ -20,7 +20,7 @@ def parse_args():
     return parser.parse_args()
 
 def wrapUp(start_time, succeeded_list):
-    with open('wrangler_log-4.txt', 'a') as f:
+    with open('wrangler_log-4.txt', 'w') as f:
         json.dump(succeeded_list, f)
         f.write('\n')
     end_time = time.time()
