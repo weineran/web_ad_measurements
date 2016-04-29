@@ -38,6 +38,37 @@ def attemptConnection(remote_debug_url):
             print("Invalid response.  We will try connecting again.")
             return "try_again"
 
+def getTabNumber(resp_json):
+    print("\nThere are "+str(len(resp_json)) + " available tabs:")
+    i = 0
+    for this_tab in resp_json:
+        try:
+            page_title = str(this_tab["title"])
+        except:
+            page_title = "ERR: unable to read page title"
+        print(str(i)+": "+page_title)
+        i += 1
+    tab_number = input("\nWhich tab would you like to drive remotely (0-"+str(len(resp_json)-1)+")?\n"+
+                        "(Recommendation: Choose the tab that is active)\n>")
+    return tab_number
+
+def getTabsJSON(debug_port):
+    remote_debug_url = "http://localhost:"+str(debug_port)+"/json"
+    while True:
+        print("Opening websocket remote debugging connection to "+remote_debug_url)
+        r = attemptConnection(remote_debug_url)
+        if r == "try_again":
+            pass
+        elif r == "give_up":
+            resp_json = {}
+            shouldQuit = True
+            return resp_json, shouldQuit
+        else:
+            break
+    resp_json = r.json()
+    shouldQuit = False
+    return resp_json, shouldQuit
+
 def getScreenDimensions():
     print("\nPlease provide the screen dimensions of your phone.")
     print("(This is needed for passing input events such as screen taps)")
@@ -1124,7 +1155,21 @@ class MeasurePageLoad:
         msg = "Opening websocket."
         self.msg_list.append(msg)
         print(msg)
-        self.ws = websocket.create_connection(self.url_ws)
+        try:
+            self.ws = websocket.create_connection(self.url_ws)
+        except Exception as e:
+            ws_end = time.time()
+            self.wsOverhead += (ws_end - ws_start)
+            print(str(e))
+            print("Failed to connect to websocket.")
+            resp_json, shouldQuit = getTabsJSON(self.debug_port)
+            tab_number = getTabNumber(resp_json)
+            print("You are driving this tab remotely:")
+            print(resp_json[tab_number])
+            target_tab = resp_json[tab_number]
+            self.url_ws = str(target_tab['webSocketDebuggerUrl'])
+            return False
+
         #mpl.sendMethod("Console.enable", None, True)
         #mpl.sendMethod("Debugger.enable", None, False)
         self.sendMethod("Network.enable", None, True)
@@ -1133,9 +1178,12 @@ class MeasurePageLoad:
         self.sendMethod("Timeline.start", None, True)
         ws_end = time.time()
         self.wsOverhead += (ws_end - ws_start)
+        return True
 
     def runMeasurements(self, useAdBlock, this_url, sample_num):
-        self.setupWebsocket()
+        didSucceed = False
+        while didSucceed == False:
+            didSucceed = self.setupWebsocket()
 
         # if useAdBlock:
         #     self.enableAdBlock()

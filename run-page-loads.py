@@ -4,6 +4,7 @@ import json
 import argparse
 from MeasurePageLoad2 import MeasurePageLoad, connectToDevice, getNetworkType, shouldContinue
 from MeasurePageLoad2 import fixURL, getLocation, attemptConnection, getUserOS, getScreenDimensions
+from MeasurePageLoad2 import getTabNumber, getTabsJSON
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -58,35 +59,15 @@ if __name__ == "__main__":
         screen_width = None
         screen_height = None
     
-    # Connect to phone and gather json info
-    remote_debug_url = "http://localhost:"+str(debug_port)+"/json"
-    while True:
-        print("Opening websocket remote debugging connection to "+remote_debug_url)
-        r = attemptConnection(remote_debug_url)
-        if r == "try_again":
-            pass
-        elif r == "give_up":
-            print("Script aborted.")
-            exit()
-        else:
-            break
-
-
-    resp_json = r.json()
+    # Connect to browser and gather json info
+    resp_json, shouldQuit = getTabsJSON(debug_port)
+    if shouldQuit:
+        print("Script aborted.")
+        exit()
 
     # Choose a browser tab to drive remotely
     if len(resp_json) > 1:
-        print("\nThere are "+str(len(resp_json)) + " available tabs:")
-        i = 0
-        for this_tab in resp_json:
-            try:
-                page_title = str(this_tab["title"])
-            except:
-                page_title = "ERR: unable to read page title"
-            print(str(i)+": "+page_title)
-            i += 1
-        tab_number = input("\nWhich tab would you like to drive remotely (0-"+str(len(resp_json)-1)+")?\n"+
-                            "(Choose the tab that is active on your phone)")
+        tab_number = getTabNumber(resp_json)
     else:
         tab_number = 0
 
