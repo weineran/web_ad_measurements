@@ -128,16 +128,25 @@ class AdAnalysis:
         else:
             return self.getMatchButTrue(this_file, data_file_list)
 
+    def getRawFromSummary(self, summary_file, raw_data_file_list):
+        target_fname = summary_file.replace("-summary.json", ".txt")
+        if target_fname in raw_data_file_list:
+            return target_fname
+        else:
+            print(target_fname+" not found")
+            raise
+            return None
+
     #@staticmethod
     def getMatchButFalse(self, this_file, data_file_list):
-        target_fname = this_file.replace("True","False",1)
+        target_fname = this_file.replace("-True-","-False-",1)
         if target_fname in data_file_list:
             return target_fname
         else:
             return None
     #@staticmethod
     def getMatchButTrue(self, this_file, data_file_list):
-        target_fname = this_file.replace("False","True",1)
+        target_fname = this_file.replace("-False-","-True-",1)
         if target_fname in data_file_list:
             return target_fname
         else:
@@ -202,6 +211,9 @@ class AdAnalysis:
 
     def getDevice(self, this_file):
         return self.getAttr(1, this_file)
+
+    def getLocation(self, this_file):
+        return self.getAttr(0, this_file)
 
     def getHostname(self, this_file):
         return self.getAttr(5, this_file)
