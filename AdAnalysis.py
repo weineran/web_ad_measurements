@@ -1,6 +1,19 @@
+from urlparse import urlparse
 
 blocked_err_msgs = ["net::ERR_CONNECTION_REFUSED", "net::ERR_BLOCKED_BY_CLIENT"]
 loaded_statuses = [200]
+
+class AutoDict(dict):
+    """
+    Implementation of perl's autovivification feature.
+    Copied from http://stackoverflow.com/questions/635483/what-is-the-best-way-to-implement-nested-dictionaries-in-python
+    """
+    def __getitem__(self, item):
+        try:
+            return dict.__getitem__(self, item)
+        except KeyError:
+            value = self[item] = type(self)()
+            return value
 
 class AdAnalysis:
 
@@ -9,6 +22,163 @@ class AdAnalysis:
         self.summaries_file_list = summaries_file_list
         self.max_sample_num = self.getMaxSampleNum()
         pass
+
+    def findFirstEventIdx(self, event_list, filename):
+        for idx in range(0, len(event_list)):
+            this_event = event_list[idx]
+            if type(this_event) != type({}):
+                continue
+            try:
+                method = this_event["method"]
+            except KeyError:
+                continue
+            else:
+                if method == "Page.navigate":
+                    this_url = this_event["params"]["url"]
+                    hostname = urlparse(this_url).netloc
+                    file_hostname = self.getHostname(filename)
+                    if hostname == file_hostname:
+                        #print("found Page.navigate to "+this_url)
+                        search_id = this_event["id"]
+                        for idx2 in range(idx+1, len(event_list)):
+                            this_event = event_list[idx2]
+                            try:
+                                this_id = this_event["id"]
+                            except KeyError:
+                                pass
+                            else:
+                                if this_id == search_id:
+                                    return idx2 + 1
+
+    def processEvent(self, this_event, url_dict, b_or_n, reqID_dict):
+        try:
+            method = this_event["method"]
+        except KeyError:
+            return
+        else:
+            if method == "Network.requestWillBeSent":
+                requestId = this_event["params"]["requestId"]
+                self.processRequestWillBeSent(this_event, url_dict, b_or_n, reqID_dict, requestId)
+
+                # TODO get size of request dict (lookup how online)
+                    
+            elif method == "Network.responseReceived":
+                requestId = this_event["params"]["requestId"]
+                this_url = this_event["params"]["response"]["url"]
+                if type(url_dict[this_url][b_or_n]) == type(1):
+                    url_dict[this_url][b_or_n]['responseCount'] += 1
+                else:
+                    url_dict[this_url][b_or_n]['responseCount'] = 1
+
+            elif method == "Network.loadingFailed":
+                requestId = this_event["params"]["requestId"]
+                self.processLoadingFailed(this_event, url_dict, b_or_n, reqID_dict, requestId)
+
+    def processUrl(self, url, url_dict):
+        # TODO need to check also Referer in headers
+        n_initiator_url = url_dict[url]["nonblocking"]["initiator_url"]
+        n_initiator_type = url_dict[url]["nonblocking"]["initiator_type"]
+        print("process_url: "+str(url))
+        print("initiator_url: "+str(n_initiator_url))
+
+        if type(url_dict[url]["isAd"]) != type(True):
+            # if this url is not already labeled...
+            if n_initiator_url == None:
+                # if it has no initiator, assume not an ad
+                url_dict[url]["isAd"] = False
+            else:
+                # if it has initiator, label it same as its initiator
+                url_dict[url]["isAd"] = self.isAd(n_initiator_url, url_dict)
+        else:
+            # if already labeled, then leave it so
+            pass
+
+
+    def isAd(self, url, url_dict):
+        print("url: "+str(url))
+        if type(url_dict[url]["isAd"]) == type(True):
+            # if already labeled, return answer
+            return url_dict[url]["isAd"]
+        else:
+            # otherwise, find out if initiator is an ad, and assume the same for this
+            n_initiator_url = url_dict[url]["nonblocking"]["initiator_url"]
+            if n_initiator_url == None:
+                url_dict[url]["isAd"] = False
+            else:
+                url_dict[url]["isAd"] = self.isAd(n_initiator_url, url_dict)
+
+            return url_dict[url]["isAd"]
+
+
+    def processLoadingFailed(self, this_event, url_dict, b_or_n, reqID_dict, requestId):
+        errorText = this_event['params']['errorText']
+        this_url = self.getUrlByReqID(reqID_dict, requestId)
+        if errorText in blocked_err_msgs:
+            if b_or_n == "blocking":
+                if type(url_dict[this_url][b_or_n]["blockedCount"]) == type(1):
+                    url_dict[this_url][b_or_n]["blockedCount"] += 1
+                else:
+                    url_dict[this_url][b_or_n]["blockedCount"] = 1
+                url_dict[this_url]["isAd"] = True
+                url_dict[this_url]["isDirectlyBlocked"] = True
+            elif b_or_n == "nonblocking":
+                print("nonblocking file blocked a URL?\nurl: "+this_url)
+            else:
+                print("invalid b_or_n: "+b_or_n)
+                raise
+        else:
+            print("errorText: "+errorText)
+            if type(url_dict[this_url][b_or_n]["failedCount"]) == type(1):
+                url_dict[this_url][b_or_n]["blockedCount"] += 1
+            else:
+                url_dict[this_url][b_or_n]["blockedCount"] = 1
+
+            
+    def getUrlByReqID(self, reqID_dict, requestId):
+        this_url = reqID_dict[requestId]['url']
+        return this_url
+
+                
+    def processRequestWillBeSent(self, this_event, url_dict, b_or_n, reqID_dict, requestId):
+        this_url = this_event["params"]["request"]["url"]
+        url_by_id = self.getUrlByReqID(reqID_dict, requestId)
+        if type(url_by_id) != type(""):
+            reqID_dict[requestId]['url'] = this_url
+        else:
+            if url_by_id != this_url:
+                print("Two different URLs for a single requestId")
+                print(url_by_id)
+                print(this_url)
+                raise
+
+        if type(url_dict[this_url][b_or_n]['requestCount']) == type(1):
+            url_dict[this_url][b_or_n]['requestCount'] += 1
+        else:
+            url_dict[this_url][b_or_n]['requestCount'] = 1
+
+        if type(reqID_dict[requestId]["requestCount"]) == type(1):
+            reqID_dict[requestId]["requestCount"] += 1
+        else:
+            reqID_dict[requestId]["requestCount"] = 1
+        
+        try:
+            initiator_type = this_event["params"]["initiator"]["type"]
+        except KeyError:
+            initiator_type = None
+
+        try:
+            initiator_url = this_event["params"]["initiator"]["url"]
+        except KeyError:
+            try:
+                initiator_url = this_event["params"]["initiator"]["stack"]["callFrames"][0]["url"]
+            except (KeyError, IndexError):
+                initiator_url = None
+
+        url_dict[this_url][b_or_n]['initiator_type'] = initiator_type
+        url_dict[this_url][b_or_n]['initiator_url'] = initiator_url
+        reqID_dict[requestId]['initiator_type'] = initiator_type
+        reqID_dict[requestId]['initiator_url'] = initiator_url
+
 
     def getMaxSampleNum(self):
         max_sample_num = 0
@@ -134,7 +304,7 @@ class AdAnalysis:
             return target_fname
         else:
             print(target_fname+" not found")
-            raise
+            #raise
             return None
 
     #@staticmethod
@@ -192,12 +362,30 @@ class AdAnalysis:
         i = 0
         while i <= attr_num:
             div_loc = fname_modified.find('-')
+            if div_loc == -1:
+                # if we're looking in a raw file, not a summary file, there is no final '-'
+                div_loc = -4
             this_attr = fname_modified[0:div_loc]
             fname_modified = fname_modified[div_loc+1:]
-            #print(this_attr)
             i += 1
-        #print(this_file+": "+this_attr)
         return this_attr
+
+    def getHostnameFromAttrStr(self, attrStr):
+        i = 0
+        while i <= 4:
+            div_loc = attrStr.find('-')
+            attrStr = attrStr[div_loc+1:]
+            i += 1
+        return attrStr
+
+    def getHostnameFromSummary(self, summary_file):
+        attrStr = summary_file[:-13]
+        return self.getHostnameFromAttrStr(attrStr)
+
+    def getHostnameFromRaw(self, raw_file):
+        attrStr = raw_file[:-4]
+        return self.getHostnameFromAttrStr(attrStr)
+            
 
     def isFirstSample(self, this_file):
         sample_num = self.getSampleNum(this_file)
@@ -216,7 +404,16 @@ class AdAnalysis:
         return self.getAttr(0, this_file)
 
     def getHostname(self, this_file):
-        return self.getAttr(5, this_file)
+        #return self.getAttr(5, this_file)
+        if this_file.endswith("-summary.json"):
+            hostname = self.getHostnameFromSummary(this_file)
+        elif this_file.endswith(".txt"):
+            hostname = self.getHostnameFromRaw(this_file)
+        else:
+            print("invalid filename: "+this_file)
+            raise
+
+        return hostname
 
     def getNetworkType(self, this_file):
         return self.getAttr(2, this_file)
@@ -299,7 +496,6 @@ class AdAnalysis:
             return first_timestamp
         else:
             if first_timestamp == None or this_timestamp < first_timestamp:
-                #print(this_timestamp)
                 return this_timestamp
             else:
                 return first_timestamp
@@ -311,7 +507,6 @@ class AdAnalysis:
             return False
         else:
             if method == "Page.loadEventFired":
-                #print("found")
                 return True
             else:
                 return False
