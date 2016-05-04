@@ -140,24 +140,42 @@ if __name__ == "__main__":
                         failList.append(nonblocking_summary_file)
                         continue
 
+            foundFirstReq = False
+            firstTimestamp = None
+            loadEventTimestamp_blocking = None
             reqID_dict = AutoDict()
             for idx in range(b_idx, len(b_event_list)):
                 this_event = b_event_list[idx]
-                aa.processEvent(this_event, url_dict, "blocking", reqID_dict)
+                if not foundFirstReq:
+                    foundFirstReq, firstTimestamp = aa.getFirstTimestamp(this_event)
+                if aa.isLoadEvent(this_event):
+                    loadEventTimestamp_blocking = this_event["params"]["timestamp"]
+                aa.processEvent(this_event, url_dict, "blocking", reqID_dict, firstTimestamp)
 
+            foundFirstReq = False
+            firstTimestamp = None
+            loadEventTimestamp_nonblocking = None
             reqID_dict = AutoDict()
             for idx in range(n_idx, len(n_event_list)):
                 this_event = n_event_list[idx]
-                aa.processEvent(this_event, url_dict, "nonblocking", reqID_dict)
+                if not foundFirstReq:
+                    foundFirstReq, firstTimestamp = aa.getFirstTimestamp(this_event)
+                if aa.isLoadEvent(this_event):
+                    loadEventTimestamp_nonblocking = this_event["params"]["timestamp"]
+                aa.processEvent(this_event, url_dict, "nonblocking", reqID_dict, firstTimestamp)
 
             # print(url_dict.items()[0])
             # print(url_dict.items()[1])
             # print(url_dict.items()[2])
+            blocking_list_timeStartToFinished = []
+            nonblocking_list_timeStartToFinished = []
             for url, v in url_dict.items():
                 print(url)
                 print(v)
-                aa.processUrl(url, url_dict)
+                aa.processUrl(url, url_dict, blocking_list_timeStartToFinished, nonblocking_list_timeStartToFinished,
+                            loadEventTimestamp_blocking, loadEventTimestamp_nonblocking)
 
+            # TODO cdf showing %objs loaded vs time for each file here
             succeedList.append(blocking_summary_file)
             succeedList.append(nonblocking_summary_file)
                 
