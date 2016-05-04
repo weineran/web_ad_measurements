@@ -23,6 +23,18 @@ class AdAnalysis:
         self.max_sample_num = self.getMaxSampleNum()
         pass
 
+    def insertY_Val(self, DICT_VS_BLOCKED, this_plot, series_label, y_datapoint):
+        try:
+            DICT_VS_BLOCKED[this_plot]["y_vals"][series_label].append(y_datapoint)
+        except KeyError:
+            DICT_VS_BLOCKED[this_plot]["y_vals"][series_label] = [y_datapoint]
+
+    def insertX_Val(self, DICT_VS_BLOCKED, this_plot, series_label, x_datapoint):
+        try:
+            DICT_VS_BLOCKED[this_plot]["x_vals"][series_label].append(x_datapoint)
+        except KeyError:
+            DICT_VS_BLOCKED[this_plot]["x_vals"][series_label] = [x_datapoint]
+
     def findFirstEventIdx(self, event_list, filename):
         for idx in range(0, len(event_list)):
             this_event = event_list[idx]
@@ -50,7 +62,34 @@ class AdAnalysis:
                                 if this_id == search_id:
                                     return idx2 + 1
 
-    def processEvent(self, this_event, url_dict, b_or_n, reqID_dict):
+    def isLoadEvent(self, this_event):
+        method = self.getMethod(this_event)
+        if method == "Page.loadEventFired":
+            return True
+        else:
+            return False
+
+    def getFirstTimestamp(self, this_event):
+        if self.getMethod(this_event) == "Network.requestWillBeSent":
+            firstTimestamp = this_event["params"]["timestamp"]
+            foundFirstReq = True
+        else:
+            firstTimestamp = None
+            foundFirstReq = False
+
+        return foundFirstReq, firstTimestamp
+
+
+    def getMethod(self, this_event):
+        try:
+            method = this_event["method"]
+        except KeyError:
+            method = None
+
+        return method
+
+
+    def processEvent(self, this_event, url_dict, b_or_n, reqID_dict, firstTimestamp):
         try:
             method = this_event["method"]
         except KeyError:
@@ -72,9 +111,14 @@ class AdAnalysis:
 
             elif method == "Network.loadingFailed":
                 requestId = this_event["params"]["requestId"]
-                self.processLoadingFailed(this_event, url_dict, b_or_n, reqID_dict, requestId)
+                self.processLoadingFailed(this_event, url_dict, b_or_n, reqID_dict, requestId, firstTimestamp)
+            elif method == "Network.loadingFinished":
+                requestId = this_event["params"]["requestId"]
+                self.processLoadingFinished(this_event, url_dict, b_or_n, reqID_dict, requestId, firstTimestamp)
 
-    def processUrl(self, url, url_dict):
+
+    def processUrl(self, url, url_dict, blocking_list_timeStartToFinished, nonblocking_list_timeStartToFinished,
+                loadEventTimestamp_blocking, loadEventTimestamp_nonblocking):
         # TODO need to check also Referer in headers
         n_initiator_url = url_dict[url]["nonblocking"]["initiator_url"]
         n_initiator_type = url_dict[url]["nonblocking"]["initiator_type"]
@@ -93,6 +137,17 @@ class AdAnalysis:
             # if already labeled, then leave it so
             pass
 
+        # timeStartToFinished
+        blocking_timeStartToFinished = url_dict[url]["blocking"]["timeStartToFinished"]
+        blocking_timestampFinished = url_dict[url]["blocking"]["timestampFinished"]
+        nonblocking_timeStartToFinished = url_dict[url]["nonblocking"]["timeStartToFinished"]
+        nonblocking_timestampFinished = url_dict[url]["nonblocking"]["timestampFinished"]
+
+        if blocking_timestampFinished < loadEventTimestamp_blocking:
+            blocking_list_timeStartToFinished.append(blocking_timeStartToFinished)
+        if nonblocking_timestampFinished < loadEventTimestamp_nonblocking:
+            nonblocking_list_timeStartToFinished.append(nonblocking_timeStartToFinished)
+
 
     def isAd(self, url, url_dict):
         print("url: "+str(url))
@@ -110,9 +165,19 @@ class AdAnalysis:
             return url_dict[url]["isAd"]
 
 
-    def processLoadingFailed(self, this_event, url_dict, b_or_n, reqID_dict, requestId):
-        errorText = this_event['params']['errorText']
+    def processLoadingFailed(self, this_event, url_dict, b_or_n, reqID_dict, requestId, firstTimestamp):
         this_url = self.getUrlByReqID(reqID_dict, requestId)
+        timestamp = this_event['params']['timestamp']
+        timeStartToFinished = timestamp - firstTimestamp
+
+        timestampRequest = url_dict[this_url][b_or_n]["timestampRequest"]
+        timeRequestToFinished = timestamp - timestampRequest
+
+        url_dict[this_url][b_or_n]['timestampFinished'] = timestamp
+        url_dict[this_url][b_or_n]['timeStartToFinished'] = timeStartToFinished
+        url_dict[this_url][b_or_n]['timeRequestToFinished'] = timeRequestToFinished
+
+        errorText = this_event['params']['errorText']
         if errorText in blocked_err_msgs:
             if b_or_n == "blocking":
                 if type(url_dict[this_url][b_or_n]["blockedCount"]) == type(1):
@@ -133,13 +198,29 @@ class AdAnalysis:
             else:
                 url_dict[this_url][b_or_n]["blockedCount"] = 1
 
+        
+
+    def processLoadingFinished(self, this_event, url_dict, b_or_n, reqID_dict, requestId, firstTimestamp):
+        this_url = self.getUrlByReqID(reqID_dict, requestId)
+        timestamp = this_event['params']['timestamp']
+        timeStartToFinished = timestamp - firstTimestamp
+
+        timestampRequest = url_dict[this_url][b_or_n]["timestampRequest"]
+        timeRequestToFinished = timestamp - timestampRequest
+
+        url_dict[this_url][b_or_n]['timestampFinished'] = timestamp
+        url_dict[this_url][b_or_n]['timeStartToFinished'] = timeStartToFinished
+        url_dict[this_url][b_or_n]['timeRequestToFinished'] = timeRequestToFinished
+
             
     def getUrlByReqID(self, reqID_dict, requestId):
         this_url = reqID_dict[requestId]['url']
         return this_url
 
                 
-    def processRequestWillBeSent(self, this_event, url_dict, b_or_n, reqID_dict, requestId):
+    def processRequestWillBeSent(self, this_event, url_dict, b_or_n, reqID_dict, requestId, firstTimestamp):
+        timestamp = this_event['params']['timestamp']
+        timeStartToRequest = timestamp - firstTimestamp
         this_url = this_event["params"]["request"]["url"]
         url_by_id = self.getUrlByReqID(reqID_dict, requestId)
         if type(url_by_id) != type(""):
@@ -150,6 +231,9 @@ class AdAnalysis:
                 print(url_by_id)
                 print(this_url)
                 raise
+
+        url_dict[this_url][b_or_n]['timestampRequest'] = timestamp
+        url_dict[this_url][b_or_n]['timeStartToRequest'] = timeStartToRequest
 
         if type(url_dict[this_url][b_or_n]['requestCount']) == type(1):
             url_dict[this_url][b_or_n]['requestCount'] += 1
@@ -238,6 +322,8 @@ class AdAnalysis:
                 datapoint = self.getValAtEvent(attr, dictNoBlock, event) - self.getValAtEvent(attr, dictYesBlock, event)
             except TypeError:
                 datapoint = None
+        elif file_flag == "Both":
+            datapoint = {"with-ads": self.getValAtEvent(attr, dictNoBlock, event), "no-ads": self.getValAtEvent(attr, dictYesBlock, event)}
         else:
             print("invalid file_flag: "+str(file_flag))
             raise
