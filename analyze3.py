@@ -121,8 +121,8 @@ if __name__ == "__main__":
     # prep directories
     raw_data_dir = os.path.join(data_dir, "raw")
     summaries_dir = os.path.join(data_dir, "summaries")
-    fig_dir = os.path.join(data_dir, "figs-min-max")
-    csv_dir = os.path.join(data_dir, "CSVs-min-max")
+    fig_dir = os.path.join(data_dir, "figs-min-dif")
+    csv_dir = os.path.join(data_dir, "CSVs-min-dif")
     raw_data_file_list = os.listdir(raw_data_dir)
     summaries_file_list = os.listdir(summaries_dir)
     if not os.path.isdir(fig_dir):
@@ -210,52 +210,48 @@ if __name__ == "__main__":
             event = LABEL_DICT[baseName][2]
             datapoint_sum = 0
             datapoint_count = 0
+            datapoint_blocking_sum = 0
+            datapoint_blocking_count = 0
+            datapoint_nonblocking_sum = 0
+            datapoint_nonblocking_count = 0
 
             # loop through pairs in the list
             datapoint_list = []         # if there are 5 samples, then there are 5 elems in list
+            datapoint_blocking_list = []
+            datapoint_nonblocking_list = []
             for dict_pair in list_of_dicts:
                 blocking_summary_dict = dict_pair[0]
                 nonblocking_summary_dict = dict_pair[1]
             
                 datapoint = aa.getDatapoint(attr, nonblocking_summary_dict, blocking_summary_dict, file_flag, event)
-                if datapoint != None:
-                    if "DataLength" in attr:
-                        datapoint = datapoint/1000    # if it is data, show it in KB
-                    #cdf.insert(cdf_key, datapoint)    # add datapoint to cdf
+                datapoint_blocking = aa.getDatapoint(attr, nonblocking_summary_dict, blocking_summary_dict, True, event)
+                datapoint_nonblocking = aa.getDatapoint(attr, nonblocking_summary_dict, blocking_summary_dict, False, event)
 
-                    # increment sum and count in avg_dict
-                    datapoint_list.append(datapoint)
-                    datapoint_sum += datapoint
-                    datapoint_count += 1
+                datapoint_sum, datapoint_count = aa.appendDatapoint(datapoint_list, datapoint, datapoint_sum, datapoint_count, attr)
+                datapoint_blocking_sum, datapoint_blocking_count = aa.appendDatapoint(datapoint_blocking_list, datapoint_blocking, datapoint_blocking_sum, datapoint_blocking_count, attr)
+                datapoint_nonblocking_sum, datapoint_nonblocking_count = aa.appendDatapoint(datapoint_nonblocking_list, datapoint_nonblocking, datapoint_nonblocking_sum, datapoint_nonblocking_count, attr)
+                
 
             # add average values to cdf
-            # try:
-            #     avg_datapoint = datapoint_sum/datapoint_count
-            # except ZeroDivisionError:
-            #     avg_datapoint = None
+            try:
+                avg_datapoint = datapoint_sum/datapoint_count
+            except ZeroDivisionError:
+                avg_datapoint = None
 
             if len(datapoint_list) > 0:
-                med_datapoint = numpy.median(datapoint_list)
-                cdf.insert(cdf_key+" (median)", med_datapoint)
-                min_datapoint = min(datapoint_list)
-                cdf.insert(cdf_key+" (min)", min_datapoint)
-                max_datapoint = max(datapoint_list)
-                cdf.insert(cdf_key+" (max)", max_datapoint)
-                avg_datapoint = numpy.average(datapoint_list)
+                # insert datapoints
+                # med_datapoint = numpy.median(datapoint_list)
+                # cdf.insert(cdf_key+" (median)", med_datapoint)
+                # min_datapoint = min(datapoint_list)
+                # cdf.insert(cdf_key+" (min-dif)", min_datapoint)
+                # max_datapoint = max(datapoint_list)
+                # cdf.insert(cdf_key+" (max-dif)", max_datapoint)
+                # avg_datapoint = numpy.average(datapoint_list)
                 #cdf.insert(cdf_key+" (avg)", avg_datapoint)
-                
-                try:
-                    data_dict[baseName][cdf_key+" (median)"].append(med_datapoint)
-                except KeyError:
-                    data_dict[baseName][cdf_key+" (median)"] = [med_datapoint]
-                try:
-                    data_dict[baseName][cdf_key+" (min)"].append(min_datapoint)
-                except KeyError:
-                    data_dict[baseName][cdf_key+" (min)"] = [min_datapoint]
-                try:
-                    data_dict[baseName][cdf_key+" (max)"].append(max_datapoint)
-                except KeyError:
-                    data_dict[baseName][cdf_key+" (max)"] = [max_datapoint]
+
+                # aa.addDatatoDict(data_dict, baseName, cdf_key+" (median)", med_datapoint)
+                # aa.addDatatoDict(data_dict, baseName, cdf_key+" (min-dif)", min_datapoint)
+                # aa.addDatatoDict(data_dict, baseName, cdf_key+" (max-dif)", max_datapoint)
 
                 if useCategories:
                     for category in categories_dict:
@@ -268,6 +264,15 @@ if __name__ == "__main__":
                             except KeyError:
                                 #data_dict[baseName][cdf_key+"-"+category+" (med)"] = [med_datapoint]
                                 data_dict[baseName][category+" (med)"] = [med_datapoint]
+
+            if len(datapoint_blocking_list) > 0 and len(datapoint_nonblocking_list) > 0:
+                min_blocking = min(datapoint_blocking_list)
+                min_nonblocking = min(datapoint_nonblocking_list)
+                min_datapoint = min_nonblocking - min_blocking
+
+                cdf.insert(cdf_key+" (using min)", min_datapoint)
+                aa.addDatatoDict(data_dict, baseName, cdf_key+" (using min)", min_datapoint)
+                
 
         for this_scatterPlot in DICT_Y_VS_EXPLICITLY_BLOCKED:
             event = DICT_Y_VS_EXPLICITLY_BLOCKED[this_scatterPlot]["event"]

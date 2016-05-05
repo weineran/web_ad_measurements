@@ -23,6 +23,24 @@ class AdAnalysis:
         self.max_sample_num = self.getMaxSampleNum()
         pass
 
+    def appendDatapoint(self, a_list, datapoint, datapoint_sum, datapoint_count, attr):
+        if datapoint != None:
+            if "DataLength" in attr:
+                datapoint = datapoint/1000    # if it is data, show it in KB
+
+            # increment sum and count in avg_dict
+            a_list.append(datapoint)
+            datapoint_sum += datapoint
+            datapoint_count += 1
+        return datapoint_sum, datapoint_count
+
+    def addDatatoDict(self, data_dict, baseName, cdf_key, datapoint):
+        try:
+            data_dict[baseName][cdf_key].append(datapoint)
+        except KeyError:
+            data_dict[baseName][cdf_key] = [datapoint]
+
+
     def insertY_Val(self, DICT_VS_BLOCKED, this_plot, series_label, y_datapoint):
         try:
             DICT_VS_BLOCKED[this_plot]["y_vals"][series_label].append(y_datapoint)
