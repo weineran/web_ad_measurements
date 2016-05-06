@@ -314,11 +314,11 @@ if __name__ == "__main__":
         else:
             cdf.plot(plotdir=fig_dir, title="", legend="lower right", lw=1.5, numSymbols=3)#styles={'linewidth':0.5}) bbox_to_anchor=(1.05, 1)
         f_csv = open(os.path.join(csv_dir, cdf.baseName+".csv"), 'w')
-        f_csv.write("key,0,10,25,50,75,90,100"+nl)
+        f_csv.write("key,0,10,25,50,75,80,90,100"+nl)
         for key in cdf._cdfs:
             #data = cdf._cdfs[key].getPdfData()[0]
             data = data_dict[cdf.baseName][key]
-            f_csv.write(key+sep+str(percentile(data,0))+sep+str(percentile(data,10))+sep+str(percentile(data,25))+sep+str(percentile(data, 50))+sep+str(percentile(data, 75))+sep+str(percentile(data,90))+sep+str(percentile(data,100))+nl)
+            f_csv.write(key+sep+str(percentile(data,0))+sep+str(percentile(data,10))+sep+str(percentile(data,25))+sep+str(percentile(data, 50))+sep+str(percentile(data, 75))+sep+str(percentile(data, 80))+sep+str(percentile(data,90))+sep+str(percentile(data,100))+nl)
         f_csv.close()
 
     # print(last_cdf._cdfs)

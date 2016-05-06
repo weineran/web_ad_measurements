@@ -21,7 +21,7 @@ def parse_args():
                     "you already have data for the top 10 and want to collect data for ranks 10-20.")
     return parser.parse_args()
 
-def shouldInclude(hostname, hostname_dict, conditions_dict, exclude_dict):
+def shouldInclude(hostname, hostname_dict, conditions_dict, exclude_dict={}):
     if hostname in exclude_dict:
         return False
         
@@ -45,9 +45,13 @@ if __name__ == "__main__":
     f.close()
 
     # get json exclude_list
-    f = open(exclude_list, 'r')
-    exclude_dict = json.load(f)
-    f.close()
+    if exclude_list == None:
+        exclude_dict = {}
+    else:
+        f = open(exclude_list, 'r')
+        exclude_dict = json.load(f)
+        f.close()
+
 
     # get conditions as dict
     a_csv = my_csv(conditions_file)
@@ -57,7 +61,7 @@ if __name__ == "__main__":
     # loop through master list
     output_dict = {}
     for hostname in master_dict:
-        if shouldInclude(hostname, master_dict[hostname], conditions_dict, exclude_dict):
+        if shouldInclude(hostname, master_dict[hostname], conditions_dict, exclude_dict=exclude_dict):
             output_dict[hostname] = master_dict[hostname]
 
     # dump output_dict to file

@@ -99,7 +99,7 @@ def connectToDevice(debug_port):
                         "1. Chrome on phone\n"+
                         "2. Chrome on computer\n>")
     if choice_num == 1:
-        device = "phone"
+        device_type = "phone"
         # command = "adb forward tcp:"+str(debug_port)+" localabstract:chrome_devtools_remote"
         command = ["adb", "forward", "tcp:"+str(debug_port), "localabstract:chrome_devtools_remote"]
         ret_code = printAndCall(command)
@@ -107,14 +107,14 @@ def connectToDevice(debug_port):
             print("Error.  Please ensure that phone is connected and try again.")
             return connectToDevice(debug_port)
     elif choice_num == 2:
-        device = "computer"
+        device_type = "computer"
         if shouldOpenChromeCanary():
             openChromeCanary(debug_port, op_sys)
     else:
         print("ERR: Invalid choice.")
         raise
-
-    return device, op_sys
+    device_name = getDeviceName()
+    return device_name, device_type, op_sys
 
 def fixURL(url):
     if not urlHasScheme(url):
@@ -128,13 +128,42 @@ def urlHasScheme(url):
     else:
         return False
 
-def getNetworkType(device):
-    if device == "phone":
+def getDelayAndBandwidth(device_type):
+    if device_type == "computer":
+        using_NLC = raw_input("Are you using the Network Link Conditioner to control latency and/or bandwidth?\n>")
+        if using_NLC.lower() == 'y' or using_NLC.lower() == 'yes':
+            delay_NLC = raw_input("Enter the Delay in ms\n>")
+            if delay_NLC == "" or delay_NLC == "None":
+                delay_NLC = None
+            else:
+                delay_NLC = float(delay_NLC)
+
+            bandwidth_NLC = raw_input("Enter the Bandwidth in Kbps\n>")
+            if bandwidth_NLC == "" or bandwidth_NLC == "None":
+                bandwidth_NLC = None
+            else:
+                bandwidth_NLC = float(bandwidth_NLC)
+
+        elif using_NLC.lower() == 'n' or using_NLC.lower() == 'no':
+            delay_NLC = None
+            bandwidth_NLC = None
+        else:
+            print("Invalid response.  Try again.")
+            return getDelayAndBandwidth(device_type)
+    else:
+        delay_NLC = None
+        bandwidth_NLC = None
+
+    return delay_NLC, bandwidth_NLC
+
+
+def getNetworkType(device_type):
+    if device_type == "phone":
         valid_resp_list = ["wifi", "4g", "3g"]
-    elif device == "computer":
+    elif device_type == "computer":
         valid_resp_list = ["wifi", "wired"]
     else:
-        print("ERR. Invalid device: "+str(device))
+        print("ERR. Invalid device_type: "+str(device_type))
         raise
 
     ask_str = "What type of network are you connected to?\nValid responses are: "
@@ -146,7 +175,7 @@ def getNetworkType(device):
         return network_type
     else:
         print("Invalid response.  Please try again.")
-        return getNetworkType(device)
+        return getNetworkType(device_type)
 
 def openChromeCanary(debug_port, op_sys):
     path_to_chrome = _getChromePath()
@@ -222,6 +251,16 @@ def printAndCall(command):
     print("Calling '"+str(command)+"'")
     return call(command)
 
+def getDeviceName():
+    device_name = raw_input("What do you want to name this device? (e.g. \"MacBookPro\" or \"GalaxyS5\")\n"+
+                        "(This is used for file naming conventions.  No spaces or '-' permitted.)\n"+
+                        ">")
+    if '-' in device_name or ' ' in device_name:
+        print("This device name is invalid.  Try again.")
+        return getDeviceName()
+    else:
+        return device_name
+
 def getUserOS():
     op_sys = raw_input("What OS are you running this script on?\n"+
                         "1. Windows\n"+
@@ -245,8 +284,8 @@ class MeasurePageLoad:
     """
     
     # constructor
-    def __init__(self, url_ws, page_url = None, cutoff_time = None, device = "computer", debug_port=9222, 
-                 phone_adBlockPackage="com.savageorgiev.blockthis", network_type=None, location=None,
+    def __init__(self, url_ws, page_url = None, cutoff_time = None, device_name="no_name", device_type = "computer", delay_NLC=None,
+                bandwidth_NLC=None, debug_port=9222, phone_adBlockPackage="com.savageorgiev.blockthis", network_type=None, location=None,
                  output_dir=None, op_sys=None, start_time=None, min_time=None, screen_width=None, screen_height=None):
         self.url_ws = url_ws                 # url to use for the websocket.WebSocket object
         self.ws = None                      # websocket.Websocket object
@@ -254,7 +293,10 @@ class MeasurePageLoad:
         self.id = 1                     # initialize to 1
         self.phone_adBlockPackage = phone_adBlockPackage
         self.location = location
-        self.device = device           # "phone" or "computer"
+        self.device_name = device_name
+        self.device_type = device_type           # "phone" or "computer"
+        self.delay_NLC = delay_NLC
+        self.bandwidth_NLC = bandwidth_NLC
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.op_sys = op_sys
@@ -310,7 +352,7 @@ class MeasurePageLoad:
         temp_dict['rawDataFile'] = self.rawData_fname
         temp_dict['logFile'] = self.log_fname
         temp_dict['location'] = self.location
-        temp_dict['device'] = self.device
+        temp_dict['device_type'] = self.device_type
         temp_dict['networkType'] = self.network_type
         temp_dict['isBlockingAds'] = self._isBlockingAds
         temp_dict['sampleNumber'] = self.sample_num
@@ -411,15 +453,15 @@ class MeasurePageLoad:
         return url
 
     def isAdBlockEnabled(self):
-        if self.device == "computer":
+        if self.device_type == "computer":
             return self.isAdBlockEnabledComputer()
-        elif self.device == "phone":
+        elif self.device_type == "phone":
             print("Attempting to kill ad block on phone in case it's already running")
             self._disableAdBlockPhone()
             return False
             #return self.isAdBlockEnabledPhone()
         else:
-            print("ERR. Unknown device '"+str(self.device)+"'.")
+            print("ERR. Unknown device_type '"+str(self.device_type)+"'.")
             raise
 
     def isAdBlockEnabledComputer(self):
@@ -440,7 +482,7 @@ class MeasurePageLoad:
 
 
     def enableAdBlock(self):
-        if self.device == "computer":
+        if self.device_type == "computer":
             if self.isAdBlockEnabled() == False:
                 print("Enabling ad-blocker")
                 self._enableAdBlockComputer()
@@ -449,24 +491,24 @@ class MeasurePageLoad:
             else:
                 print("Ad-blocker is already enabled")
                 return
-        elif self.device == "phone":
+        elif self.device_type == "phone":
             print("Enabling ad-blocker")
             self._enableAdBlockPhone()
             print("Ad-blocker is now enabled")
         else:
-            print("ERR. Unknown device '"+self.device+"'")
+            print("ERR. Unknown device_type '"+self.device_type+"'")
             raise
 
         self._isBlockingAds = True
 
     def disableAdBlock(self):
-        if self.device == "computer":
+        if self.device_type == "computer":
             self._disableAdBlockComputer()
             self._enableAdBlockMinus()
-        elif self.device == "phone":
+        elif self.device_type == "phone":
             self._disableAdBlockPhone()
         else:
-            print("ERR. Unknown device '"+self.device+"'")
+            print("ERR. Unknown device_type '"+self.device_type+"'")
             raise
 
         self._isBlockingAds = False
@@ -666,12 +708,12 @@ class MeasurePageLoad:
         self.sendMethod("Input.dispatchKeyEvent", params, True)
 
     def clearDeviceDNSCache(self):
-        if self.device == "computer":
+        if self.device_type == "computer":
             self.clearComputerDNScache()
-        elif self.device == "phone":
+        elif self.device_type == "phone":
             self.clearPhoneDNScache()
         else:
-            print("ERR. Unknown device '"+str(self.device)+"'")
+            print("ERR. Unknown device_type '"+str(self.device_type)+"'")
             raise
         return
 
@@ -727,7 +769,7 @@ class MeasurePageLoad:
         if LOGSENTMSGS == False and LOGRESPONSES == False:
             self.msg_list = []      # first reset the message list
 
-        if self.device == "phone":
+        if self.device_type == "phone":
             # bring chrome to front so we can watch
             command = "adb shell am start com.android.chrome"
             command = command.split(' ')
@@ -1109,7 +1151,13 @@ class MeasurePageLoad:
         self.sample_num = sample_num
         self.page_url = dst_url
         self.hostname = urlparse(self.page_url).netloc
-        self.rawData_fname = self.location+"-"+self.device+"-"+self.network_type+"-"+str(self._isBlockingAds)+"-"+\
+
+        if self.delay_NLC != None or self.bandwidth_NLC != None:
+            network_str = self.network_type+"_"+str(int(self.delay_NLC))+"ms_"+str(self.bandwidth_NLC)+"Kbps"
+        else:
+            network_str = self.network_type
+
+        self.rawData_fname = self.location+"-"+self.device_name+"-"+network_str+"-"+str(self._isBlockingAds)+"-"+\
                 str(sample_num)+"-"+self.hostname+".txt"
         self.summary_fname = self.rawData_fname[:-4]+"-summary.json"
 

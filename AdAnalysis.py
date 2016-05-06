@@ -294,8 +294,8 @@ class AdAnalysis:
 
     def getXLabel(self, label_dict, attr):
         attr_info = label_dict[attr]
-        line1 = attr_info[0]+'\n'
-        event = attr_info[2]
+        line1 = attr_info["x-label"]+'\n'
+        event = attr_info["event"]
         if event == "DOM":
             line2 = "(cutoff at DOMContentLoaded event)\n"
         elif event == "Load":

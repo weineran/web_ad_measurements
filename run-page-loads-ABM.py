@@ -2,7 +2,7 @@ import requests
 import time
 import json
 import argparse
-from MeasurePageLoad3 import MeasurePageLoad, connectToDevice, getNetworkType, shouldContinue
+from MeasurePageLoad3 import MeasurePageLoad, connectToDevice, getNetworkType, shouldContinue, getDelayAndBandwidth
 from MeasurePageLoad3 import fixURL, getLocation, attemptConnection, getUserOS, getScreenDimensions
 from MeasurePageLoad3 import getTabNumber, getTabsJSON
 
@@ -44,16 +44,17 @@ if __name__ == "__main__":
         exit()
     
     # connect to device
-    device, op_sys = connectToDevice(debug_port)
+    device_name, device_type, op_sys = connectToDevice(debug_port)
 
     # get location
     location = getLocation()
 
     # get network connection type
-    network_type = getNetworkType(device)
+    network_type = getNetworkType(device_type)
+    delay_NLC, bandwidth_NLC = getDelayAndBandwidth(device_type)
 
     # get screen dimensions
-    if device == "phone":
+    if device_type == "phone":
         screen_width, screen_height = getScreenDimensions()
     else:
         screen_width = None
@@ -83,8 +84,8 @@ if __name__ == "__main__":
     # connect to first tab via the WS debug URL
     url_ws = str(target_tab['webSocketDebuggerUrl'])
     
-    mpl = MeasurePageLoad(url_ws, cutoff_time=cutoff_time, device=device, debug_port=debug_port, 
-                        network_type=network_type, location=location, output_dir=output_dir, op_sys=op_sys,
+    mpl = MeasurePageLoad(url_ws, cutoff_time=cutoff_time, device_name=device_name, device_type=device_type, delay_NLC=delay_NLC,
+                        bandwidth_NLC=bandwidth_NLC, debug_port=debug_port, network_type=network_type, location=location, output_dir=output_dir, op_sys=op_sys,
                         start_time=start_time, min_time=min_time, screen_width=screen_width, screen_height=screen_height)
 
     mpl.setupOutputDirs()
