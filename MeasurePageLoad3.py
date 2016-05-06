@@ -161,7 +161,7 @@ def getNetworkType(device_type):
     if device_type == "phone":
         valid_resp_list = ["wifi", "4g", "3g"]
     elif device_type == "computer":
-        valid_resp_list = ["wifi", "wired"]
+        valid_resp_list = ["wifi", "wired", "tether_4g", "tether_3g"]
     else:
         print("ERR. Invalid device_type: "+str(device_type))
         raise
