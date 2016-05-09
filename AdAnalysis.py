@@ -504,6 +504,14 @@ class AdAnalysis:
     def getDevice(self, this_file):
         return self.getAttr(1, this_file)
 
+    def getDeviceTypeFromSummary(self, summary_dict):
+        try:
+            device_type = summary_dict["device_type"]
+        except KeyError:
+            # need to be backwards compatible with old code
+            device_type = summary_dict["device"]
+        return device_type
+
     def getLocation(self, this_file):
         return self.getAttr(0, this_file)
 
