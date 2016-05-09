@@ -53,6 +53,12 @@ class AdAnalysis:
         except KeyError:
             DICT_VS_BLOCKED[this_plot]["x_vals"][series_label] = [x_datapoint]
 
+    def insertHostname(self, DICT_VS_BLOCKED, this_plot, series_label, hostname):
+        try:
+            DICT_VS_BLOCKED[this_plot]["hostnames"][series_label].append(hostname)
+        except KeyError:
+            DICT_VS_BLOCKED[this_plot]["hostnames"][series_label] = [hostname]
+
     def findFirstEventIdx(self, event_list, filename):
         for idx in range(0, len(event_list)):
             this_event = event_list[idx]
