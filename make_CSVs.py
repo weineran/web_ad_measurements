@@ -206,8 +206,8 @@ if __name__ == "__main__":
     list_out_dir = os.path.join(data_dir, "measured_lists")
     raw_data_dir = os.path.join(data_dir, "raw")
     summaries_dir = os.path.join(data_dir, "summaries")
-    fig_dir = os.path.join(data_dir, "figs-test")
-    csv_dir = os.path.join(data_dir, "CSVs-test")
+    fig_dir = os.path.join(data_dir, "figs-test-exclude-volatile")
+    csv_dir = os.path.join(data_dir, "CSVs-test-exclude-volatile")
     raw_data_file_list = os.listdir(raw_data_dir)
     summaries_file_list = os.listdir(summaries_dir)
     if not os.path.isdir(fig_dir):

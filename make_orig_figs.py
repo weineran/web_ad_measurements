@@ -203,12 +203,15 @@ if __name__ == "__main__":
     exclude_list_desktop = args.exclude_list_desktop
 
     # prep directories
+    # fig_dir = os.path.join(data_dir, "figs-test-exclude-volatile/orig")
+    # csv_dir = os.path.join(data_dir, "CSVs-test-exclude-volatile/orig")
     fig_dir = os.path.join(data_dir, "figs-test/orig")
     csv_dir = os.path.join(data_dir, "CSVs-test/orig")
     summaries_dir = os.path.join(data_dir, "summaries")
     summaries_file_list = os.listdir(summaries_dir)
 
     if not os.path.isdir(fig_dir):
+
         os.mkdir(fig_dir)
 
     aa = AdAnalysis(summaries_file_list)
@@ -219,27 +222,46 @@ if __name__ == "__main__":
             continue
         f_csv = open(os.path.join(csv_dir, csv_file), 'r')
         csv_reader = csv.reader(f_csv, delimiter=',')
-        bar_plot = plt.figure(figsize=(8,3))
-        cdf_plot = plt.figure(figsize=(4,3))
-        for i in range(0, len(f_csv.readlines())):
-            hostnames = csv_reader.readline()
-            datapoints = csv_reader.readline()
-            label = datapoints[0].split(' ')[0]
-            datapoints = datapoints[1:]
-            linedata = statsmodels.distributions.ECDF(datapoints)
-            avg = numpy.average(datapoints)
-            stdev = numpy.stdev(datapoints)
-            bar_plot.plot(label, avg)
-            cdf_plot.plot(linedata.x, linedata.y, label=label, c=colors[i%len(colors)])#S marker=markers[i%len(markers)])
+        bar_plot = plt.figure(1, figsize=(8,3))
+        cdf_plot = plt.figure(2, figsize=(4,3))
+        i = 0
+        means = []
+        yerrs = []
+        labels = []
+        for row in csv_reader:
+            if i%2 == 0:
+                hostnames = row[1:]
+            elif i%2 == 1:
+                datapoints = row
+                label = datapoints[0].split(' ')[0]
+                datapoints = [float(y) for y in datapoints[1:]]
+                avg = numpy.average(datapoints)
+                means.append(avg)
+                stdev = numpy.std(datapoints)
+                yerrs.append(stdev)
+                labels.append(label)
+
+                linedata = statsmodels.distributions.ECDF(datapoints)
+                #cdf_plot.plot(linedata.x, linedata.y, label=label, c=colors[i%len(colors)])#S marker=markers[i%len(markers)])
+            i+=1
         f_csv.close()
 
+        plt.figure(1)   # switch to bar plot
+        fig, ax = plt.subplots()
+        bar_locs = numpy.arange(len(means))
+        width = 0.35
+        bars = ax.bar(bar_locs, means, width, color='r', yerr=yerrs)
+        ax.set_xticks(bar_locs + width)
+        ax.set_xticklabels(labels, rotation="vertical")
         bar_fname = csv_file[:-4]+"-bar.pdf"
-        bar_plot.savefig(bar_fname)
-        bar_plot.close()
+        bar_path = os.path.join(fig_dir, bar_fname)
+        plt.savefig(bar_path, bbox_inches="tight")
 
+        plt.figure(2)
         cdf_fname = csv_file[:-4]+"-cdf.pdf"
-        cdf_plot.savefig(fname, bbox_inches="tight")
-        cdf_plot.close()
+        cdf_path = os.path.join(fig_dir, cdf_fname)
+        cdf_plot.savefig(cdf_path, bbox_inches="tight")
+        plt.close()
 
     end_time = time.clock()
     elapsed_time = end_time - start_time
