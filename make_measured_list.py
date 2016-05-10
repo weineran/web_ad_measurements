@@ -33,6 +33,8 @@ if __name__ == "__main__":
     phone_wifi_measured_dict = {}
     computer_wired_measured_dict= {}
     computer_wifi_measured_dict= {}
+    macbookpro_wired_measured_dict= {}
+    macbookpro_wifi_measured_dict= {}
 
     # loop through summary files and build dicts
     for summary_file in summaries_file_list:
@@ -57,6 +59,14 @@ if __name__ == "__main__":
             else:
                 print("invalid network: "+str(this_network))
                 raise
+        elif this_device == "MacBookPro":
+            if this_network == "wired":
+                macbookpro_wired_measured_dict[this_hostname] = True
+            elif this_network == "wifi":
+                macbookpro_wifi_measured_dict[this_hostname] = True
+            else:
+                print("invalid network: "+str(this_network))
+                raise
         else:
             print("invalid device: "+str(this_device))
             raise
@@ -66,6 +76,8 @@ if __name__ == "__main__":
     phone_wifi_list_path = os.path.join(list_out_dir, "phone_wifi_measured.json")
     computer_wired_list_path = os.path.join(list_out_dir, "computer_wired_measured.json")
     computer_wifi_list_path = os.path.join(list_out_dir, "computer_wifi_measured.json")
+    macbookpro_wired_list_path = os.path.join(list_out_dir, "macbookpro_wired_measured.json")
+    macbookpro_wifi_list_path = os.path.join(list_out_dir, "macbookpro_wifi_measured.json")
 
     with open(phone_4g_list_path, 'w') as f:
         json.dump(phone_4g_measured_dict, f)
@@ -75,6 +87,10 @@ if __name__ == "__main__":
         json.dump(computer_wired_measured_dict, f)
     with open(computer_wifi_list_path, 'w') as f:
         json.dump(computer_wifi_measured_dict, f)
+    with open(macbookpro_wired_list_path, 'w') as f:
+        json.dump(macbookpro_wired_measured_dict, f)
+    with open(macbookpro_wifi_list_path, 'w') as f:
+        json.dump(macbookpro_wifi_measured_dict, f)
 
 
 
