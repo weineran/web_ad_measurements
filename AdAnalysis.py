@@ -1,4 +1,5 @@
 from urlparse import urlparse
+from collections import OrderedDict
 
 blocked_err_msgs = ["net::ERR_CONNECTION_REFUSED", "net::ERR_BLOCKED_BY_CLIENT"]
 loaded_statuses = [200]
@@ -21,7 +22,166 @@ class AdAnalysis:
     def __init__(self, summaries_file_list):
         self.summaries_file_list = summaries_file_list
         self.max_sample_num = self.getMaxSampleNum()
+        self.LEGEND_DICT = OrderedDict([("phone-4g", "Smartphone (4G)"),
+                            ("phone-wifi", "Smartphone (WiFi)"),
+                            ("computer-wifi", "Laptop (WiFi)"),
+                            ("MacBookPro-wired", "Laptop (Wired)")])
+        self.MASTER_DICT = {
+            "Final-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
+            "DOM-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
+            "Load-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
+            "Final-numObjsRequested": {"attr": "numObjsRequested",},
+            "DOM-numObjsRequested": {"attr": "numObjsRequested",},
+            "Load-numObjsRequested": {"attr": "numObjsRequested",},
+            "Final-responseReceivedCount": {"attr": "responseReceivedCount",},
+            "DOM-responseReceivedCount": {"attr": "responseReceivedCount",},
+            "Load-responseReceivedCount": {"attr": "responseReceivedCount",},
+            "Final-time_DOMContent": {"attr": "time_DOMContent",},
+            "Final-time_onLoad": {"attr": "time_onLoad",},
+            "Final-time_finishLoad": {"attr": "time_finishLoad",},
+            "DOM-cumulativeDataLength": {"attr": "cumulativeDataLength",},
+            "Load-cumulativeDataLength": {"attr": "cumulativeDataLength",},
+            "Final-cumulativeDataLength": {"attr": "cumulativeDataLength",},
+            "DOM-cumulativeEncodedDataLength_LF": {"attr": "cumulativeEncodedDataLength_LF",},
+            "Load-cumulativeEncodedDataLength_LF": {"attr": "cumulativeEncodedDataLength_LF",},
+            "Final-cumulativeEncodedDataLength_LF": {"attr": "cumulativeEncodedDataLength_LF",},
+            "DOM-cumulativeEncodedDataLength": {"attr": "cumulativeEncodedDataLength",},
+            "Load-cumulativeEncodedDataLength": {"attr": "cumulativeEncodedDataLength",},
+            "Final-cumulativeEncodedDataLength": {"attr": "cumulativeEncodedDataLength",},
+            "Load-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
+            "Load-responseReceivedCount": {"attr": "responseReceivedCount",},
+            "Load-responseReceivedCount-False": {"attr": "responseReceivedCount",},
+            "Load-numBlockedExplicitly-doPercent": {"attr": "numBlockedExplicitly",},
+            "Load-responseReceivedCount-doPercent": {"attr": "responseReceivedCount",},
+            "Load-responseReceivedCount-False-doPercent": {"attr": "responseReceivedCount",}
+        }
+        self.DICT_ORIG_CDFS = {
+            "Final-numBlockedExplicitly": {
+                "attr": "numBlockedExplicitly","x-label": "Number of objects", "file_flag": True, "event": "Final"},
+            "DOM-numBlockedExplicitly": {
+                "attr": "numBlockedExplicitly","x-label": "Number of objects", "file_flag": True, "event": "DOM"},
+            "Load-numBlockedExplicitly": {
+                "attr": "numBlockedExplicitly","x-label": "Number of objects", "file_flag": True, "event": "Load", "method": "median_blocking"},
+            "Final-numObjsRequested": {
+                "attr": "numObjsRequested","x-label": "Number of objects", "file_flag": "Diff", "event": "Final"},
+            "DOM-numObjsRequested": {
+                "attr": "numObjsRequested","x-label": "Number of objects", "file_flag": "Diff", "event": "DOM"},
+            "Load-numObjsRequested": {
+                "attr": "numObjsRequested","x-label": "Number of objects", "file_flag": "Diff", "event": "Load"},
+            "Final-responseReceivedCount": {
+                "attr": "responseReceivedCount","x-label": "Number of objects", "file_flag": "Diff", "event": "Final"},
+            "DOM-responseReceivedCount": {
+                "attr": "responseReceivedCount","x-label": "Number of objects", "file_flag": "Diff", "event": "DOM"},
+            "Load-responseReceivedCount": {
+                "attr": "responseReceivedCount","x-label": "Number of objects", "file_flag": "Diff", "event": "Load", 
+                "method": "median_diff", "box_ylabel": "Number of ad objects"},
+            "Final-time_DOMContent": {
+                "attr": "time_DOMContent","x-label": "Seconds", "file_flag": "Diff", "event": "Final"},
+            "Final-time_onLoad": {
+                "attr": "time_onLoad","x-label": "Seconds", "file_flag": "Diff", "event": "Final"},
+            "Final-time_finishLoad": {
+                "attr": "time_finishLoad","x-label": "Number of extra seconds to finish", "file_flag": "Diff", "event": "Final"},
+            "DOM-cumulativeDataLength": {
+                "attr": "cumulativeDataLength","x-label": "Additional data transferred (KB)", "file_flag": "Diff", "event": "DOM"},
+            "Load-cumulativeDataLength": {
+                "attr": "cumulativeDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Load"},
+            "Final-cumulativeDataLength": {
+                "attr": "cumulativeDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Final"},
+            "DOM-cumulativeEncodedDataLength_LF": {
+                "attr": "cumulativeEncodedDataLength_LF","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "DOM"},
+            "Load-cumulativeEncodedDataLength_LF": {
+                "attr": "cumulativeEncodedDataLength_LF","x-label": "Data (KB)", "file_flag": "Diff", "event": "Load", "method": "median_diff"},
+            "Final-cumulativeEncodedDataLength_LF": {
+                "attr": "cumulativeEncodedDataLength_LF","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Final"},
+            "DOM-cumulativeEncodedDataLength": {
+                "attr": "cumulativeEncodedDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "DOM"},
+            "Load-cumulativeEncodedDataLength": {
+                "attr": "cumulativeEncodedDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Load"},
+            "Final-cumulativeEncodedDataLength": {
+                "attr": "cumulativeEncodedDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Final"}
+        }
+        self.DICT_RANGE_CDFS = {
+            "Load-numBlockedExplicitly": {
+                "attr": "numBlockedExplicitly", "y-label": "CDF of block count range",
+                "file_flag": True, "doPercent": False},
+            "Load-responseReceivedCount": {
+                "attr": "responseReceivedCount", "y-label": "CDF of 'block' count range",
+                "file_flag": "Diff", "doPercent": False},
+            "Load-responseReceivedCount-False": {
+                "attr": "responseReceivedCount", "y-label": "CDF of obj count range",
+                "file_flag": False, "doPercent": False},
+            "Load-numBlockedExplicitly-doPercent": {
+                "attr": "numBlockedExplicitly", "y-label": "CDF of block count range",
+                "file_flag": True, "doPercent": True},
+            "Load-responseReceivedCount-doPercent": {
+                "attr": "responseReceivedCount", "y-label": "CDF of 'block' count range",
+                "file_flag": "Diff", "doPercent": True},
+            "Load-responseReceivedCount-False-doPercent": {
+                "attr": "responseReceivedCount", "y-label": "CDF of obj count variability",
+                "x-label": "% variability", "file_flag": False, "doPercent": True}
+        }
+        self.DICT_Y_VS_EXPLICITLY_BLOCKED = {
+            "DOM-numObjsRequested": {
+                "attr": "numObjsRequested", "y-label": "Num extra objs requested",
+                "event": "DOM", "file_flag": "Diff"},
+            "DOM-responseReceivedCount": {
+                "attr": "responseReceivedCount", "y-label": "Num extra objs loaded",
+                "event": "DOM", "file_flag": "Diff"},
+            "DOM-cumulativeEncodedDataLength_LF": {
+                "attr": "cumulativeEncodedDataLength_LF", "y-label": "Additional data transferred (KB)",
+                "event": "DOM", "file_flag": "Diff"},
+            "Final-time_DOMContent": {
+                "attr": "time_DOMContent", "y-label": "Num extra seconds",
+                "event": "Final", "file_flag": "Diff"},
+            "Final-time_DOMContent_Both": {
+                "attr": "time_DOMContent", "y-label": "Num seconds",
+                "event": "Final", "file_flag": "Both"},
+
+            "Load-numObjsRequested": {
+                "attr": "numObjsRequested", "y-label": "Num extra objs requested",
+                "event": "Load", "file_flag": "Diff"},
+            "Load-responseReceivedCount": {
+                "attr": "responseReceivedCount", "y-label": "Num extra objs loaded",
+                "event": "Load", "file_flag": "Diff"},
+            "Load-cumulativeEncodedDataLength_LF": {
+                "attr": "cumulativeEncodedDataLength_LF", "y-label": "Additional data transferred (KB)",
+                "event": "Load", "file_flag": "Diff"},
+            "Final-time_onLoad": {
+                "attr": "time_onLoad", "y-label": "Num extra seconds",
+                "event": "Final", "file_flag": "Diff"},
+            "Final-time_onLoad_Both": {
+                "attr": "time_onLoad", "y-label": "Num seconds",
+                "event": "Final", "file_flag": "Both"},
+
+            "Final-numObjsRequested": {
+                "attr": "numObjsRequested", "y-label": "Num extra objs requested",
+                "event": "Final", "file_flag": "Diff"},
+            "Final-responseReceivedCount": {
+                "attr": "responseReceivedCount", "y-label": "Num extra objs loaded",
+                "event": "Final", "file_flag": "Diff"},
+            "Final-cumulativeEncodedDataLength_LF": {
+                "attr": "cumulativeEncodedDataLength_LF", "y-label": "Additional data transferred (KB)",
+                "event": "Final", "file_flag": "Diff"},
+            "Final-time_finishLoad": {
+                "attr": "time_finishLoad", "y-label": "Num extra seconds",
+                "event": "Final", "file_flag": "Diff"},
+            "Final-time_finishLoad_Both": {
+                "attr": "time_finishLoad", "y-label": "Num seconds",
+                "event": "Final", "file_flag": "Both"}
+        }
         pass
+
+    def setLegendOrder(self, summaries_file_list, LEGEND_DICT):
+        for key in reversed(LEGEND_DICT):
+            search_str = key+"-True-1"
+            i = 0
+            for summary_file in summaries_file_list:
+                if search_str in summary_file:
+                    this_file = summaries_file_list.pop(i)
+                    summaries_file_list.insert(0,this_file)
+                i+=1
+
+
 
     def appendDatapoint(self, a_list, datapoint, datapoint_sum, datapoint_count, attr):
         if datapoint != None:
@@ -300,17 +460,18 @@ class AdAnalysis:
 
     def getXLabel(self, label_dict, attr):
         attr_info = label_dict[attr]
-        line1 = attr_info["x-label"]+'\n'
+        line1 = attr_info["x-label"]
         event = attr_info["event"]
         if event == "DOM":
-            line2 = "(cutoff at DOMContentLoaded event)\n"
+            line2 = "\n(cutoff at DOMContentLoaded event)"
         elif event == "Load":
-            line2 = "(cutoff at page Load event)\n"
+            line2 = "\n(cutoff at page Load event)"
         elif event == "Final":
-            line2 = "(Loading finished or cutoff time reached)\n"
+            line2 = "\n(Loading finished or cutoff time reached)"
         else:
             print("invalid event: "+str(event))
             raise
+        line2 = ""
         return line1+line2
 
     def getKeyAndVal(self, attr, dictNoBlock, dictYesBlock, file_flag, event):
@@ -353,6 +514,41 @@ class AdAnalysis:
             raise
 
         return datapoint
+
+    def shouldExclude(self, target_key, fig_key, datapoint, denominator, excludeNoAds):
+        if target_key == fig_key:
+            if target_key == "Load-responseReceivedCount-False-doPercent":
+                if datapoint >= 20 or denominator == 0:
+                    return True
+            elif target_key == "Load-numBlockedExplicitly":
+                if excludeNoAds and datapoint == 0:
+                    return True
+        return False
+
+    def selectDatapoint(self, method, min_nonblocking_datapoint, min_blocking_datapoint,
+                                                max_diff_datapoint,
+                                                med_blocking_datapoint, med_diff_datapoint):
+        if method == "diff_of_mins":
+            datapoint = min_nonblocking_datapoint - min_blocking_datapoint
+            key_suffix = " (diff of mins)"
+
+        elif method == "max_diff":
+            datapoint = max_diff_datapoint
+            key_suffix = " (max diff)"
+
+        elif method == "median_diff":
+            datapoint = med_diff_datapoint
+            key_suffix = " (median diff)"
+
+        elif method == "median_blocking":
+            datapoint = med_blocking_datapoint
+            key_suffix = " (median)"
+
+        else:
+            print("method: "+str(method))
+            raise
+
+        return datapoint, key_suffix
 
     def getValAtEvent(self, attr, the_dict, event):
         if event == "Final":

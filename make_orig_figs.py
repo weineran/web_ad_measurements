@@ -15,6 +15,12 @@ import csv
 doScatterPlots = True
 useCategories = True
 orig_cdf_method = "diff_of_mins"
+fig_subdir = "figs-5-11-cat-exclude/orig"
+csv_subdir = "CSVs-5-11-cat-exclude/orig"
+# fig_dir = os.path.join(data_dir, "figs-exclude-volatile-no-cat/orig")
+# csv_dir = os.path.join(data_dir, "CSVs-exclude-volatile-no-cat/orig")
+# fig_dir = os.path.join(data_dir, "figs-test/orig")
+# csv_dir = os.path.join(data_dir, "CSVs-test/orig")
 
 # For CDFs
 colors = ['b', 'g', 'r', 'c', 'm', 'k']
@@ -23,158 +29,6 @@ sep = ','
 nl = '\n'
 tab = "    "
 
-MASTER_DICT = {
-    "Final-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
-    "DOM-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
-    "Load-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
-    "Final-numObjsRequested": {"attr": "numObjsRequested",},
-    "DOM-numObjsRequested": {"attr": "numObjsRequested",},
-    "Load-numObjsRequested": {"attr": "numObjsRequested",},
-    "Final-responseReceivedCount": {"attr": "responseReceivedCount",},
-    "DOM-responseReceivedCount": {"attr": "responseReceivedCount",},
-    "Load-responseReceivedCount": {"attr": "responseReceivedCount",},
-    "Final-time_DOMContent": {"attr": "time_DOMContent",},
-    "Final-time_onLoad": {"attr": "time_onLoad",},
-    "Final-time_finishLoad": {"attr": "time_finishLoad",},
-    "DOM-cumulativeDataLength": {"attr": "cumulativeDataLength",},
-    "Load-cumulativeDataLength": {"attr": "cumulativeDataLength",},
-    "Final-cumulativeDataLength": {"attr": "cumulativeDataLength",},
-    "DOM-cumulativeEncodedDataLength_LF": {"attr": "cumulativeEncodedDataLength_LF",},
-    "Load-cumulativeEncodedDataLength_LF": {"attr": "cumulativeEncodedDataLength_LF",},
-    "Final-cumulativeEncodedDataLength_LF": {"attr": "cumulativeEncodedDataLength_LF",},
-    "DOM-cumulativeEncodedDataLength": {"attr": "cumulativeEncodedDataLength",},
-    "Load-cumulativeEncodedDataLength": {"attr": "cumulativeEncodedDataLength",},
-    "Final-cumulativeEncodedDataLength": {"attr": "cumulativeEncodedDataLength",},
-    "Load-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
-    "Load-responseReceivedCount": {"attr": "responseReceivedCount",},
-    "Load-responseReceivedCount-False": {"attr": "responseReceivedCount",},
-    "Load-numBlockedExplicitly-doPercent": {"attr": "numBlockedExplicitly",},
-    "Load-responseReceivedCount-doPercent": {"attr": "responseReceivedCount",},
-    "Load-responseReceivedCount-False-doPercent": {"attr": "responseReceivedCount",}
-}
-
-DICT_ORIG_CDFS = {
-    "Final-numBlockedExplicitly": {
-        "attr": "numBlockedExplicitly","x-label": "\nNumber of objects directly blocked", "file_flag": True, "event": "Final"},
-    "DOM-numBlockedExplicitly": {
-        "attr": "numBlockedExplicitly","x-label": "\nNumber of objects directly blocked", "file_flag": True, "event": "DOM"},
-    "Load-numBlockedExplicitly": {
-        "attr": "numBlockedExplicitly","x-label": "\nNumber of objects directly blocked", "file_flag": True, "event": "Load"},
-    "Final-numObjsRequested": {
-        "attr": "numObjsRequested","x-label": "\nNumber of extra objects requested", "file_flag": "Diff", "event": "Final"},
-    "DOM-numObjsRequested": {
-        "attr": "numObjsRequested","x-label": "\nNumber of extra objects requested", "file_flag": "Diff", "event": "DOM"},
-    "Load-numObjsRequested": {
-        "attr": "numObjsRequested","x-label": "\nNumber of extra objects requested", "file_flag": "Diff", "event": "Load"},
-    "Final-responseReceivedCount": {
-        "attr": "responseReceivedCount","x-label": "\nNumber of extra objects loaded", "file_flag": "Diff", "event": "Final"},
-    "DOM-responseReceivedCount": {
-        "attr": "responseReceivedCount","x-label": "\nNumber of extra objects loaded", "file_flag": "Diff", "event": "DOM"},
-    "Load-responseReceivedCount": {
-        "attr": "responseReceivedCount","x-label": "\nNumber of extra objects loaded", "file_flag": "Diff", "event": "Load"},
-    "Final-time_DOMContent": {
-        "attr": "time_DOMContent","x-label": "\nNumber of extra seconds to reach\nDOMContentLoaded event", "file_flag": "Diff", "event": "Final"},
-    "Final-time_onLoad": {
-        "attr": "time_onLoad","x-label": "\nNumber of extra seconds to reach\npage Load event", "file_flag": "Diff", "event": "Final"},
-    "Final-time_finishLoad": {
-        "attr": "time_finishLoad","x-label": "\nNumber of extra seconds to finish", "file_flag": "Diff", "event": "Final"},
-    "DOM-cumulativeDataLength": {
-        "attr": "cumulativeDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "DOM"},
-    "Load-cumulativeDataLength": {
-        "attr": "cumulativeDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Load"},
-    "Final-cumulativeDataLength": {
-        "attr": "cumulativeDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Final"},
-    "DOM-cumulativeEncodedDataLength_LF": {
-        "attr": "cumulativeEncodedDataLength_LF","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "DOM"},
-    "Load-cumulativeEncodedDataLength_LF": {
-        "attr": "cumulativeEncodedDataLength_LF","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Load"},
-    "Final-cumulativeEncodedDataLength_LF": {
-        "attr": "cumulativeEncodedDataLength_LF","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Final"},
-    "DOM-cumulativeEncodedDataLength": {
-        "attr": "cumulativeEncodedDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "DOM"},
-    "Load-cumulativeEncodedDataLength": {
-        "attr": "cumulativeEncodedDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Load"},
-    "Final-cumulativeEncodedDataLength": {
-        "attr": "cumulativeEncodedDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Final"}
-}
-
-
-DICT_RANGE_CDFS = {
-    "Load-numBlockedExplicitly": {
-        "attr": "numBlockedExplicitly", "y-label": "CDF of block count range",
-        "file_flag": True, "doPercent": False},
-    "Load-responseReceivedCount": {
-        "attr": "responseReceivedCount", "y-label": "CDF of 'block' count range",
-        "file_flag": "Diff", "doPercent": False},
-    "Load-responseReceivedCount-False": {
-        "attr": "responseReceivedCount", "y-label": "CDF of obj count range",
-        "file_flag": False, "doPercent": False},
-    "Load-numBlockedExplicitly-doPercent": {
-        "attr": "numBlockedExplicitly", "y-label": "CDF of block count range",
-        "file_flag": True, "doPercent": True},
-    "Load-responseReceivedCount-doPercent": {
-        "attr": "responseReceivedCount", "y-label": "CDF of 'block' count range",
-        "file_flag": "Diff", "doPercent": True},
-    "Load-responseReceivedCount-False-doPercent": {
-        "attr": "responseReceivedCount", "y-label": "CDF of obj count range",
-        "file_flag": False, "doPercent": True}
-}
-
-DICT_Y_VS_EXPLICITLY_BLOCKED = {
-    "DOM-numObjsRequested": {
-        "attr": "numObjsRequested", "y-label": "Num extra objs requested",
-        "event": "DOM", "file_flag": "Diff"},
-    "DOM-responseReceivedCount": {
-        "attr": "responseReceivedCount", "y-label": "Num extra objs loaded",
-        "event": "DOM", "file_flag": "Diff"},
-    "DOM-cumulativeEncodedDataLength_LF": {
-        "attr": "cumulativeEncodedDataLength_LF", "y-label": "Additional data transferred (KB)",
-        "event": "DOM", "file_flag": "Diff"},
-    "Final-time_DOMContent": {
-        "attr": "time_DOMContent", "y-label": "Num extra seconds",
-        "event": "Final", "file_flag": "Diff"},
-    "Final-time_DOMContent_Both": {
-        "attr": "time_DOMContent", "y-label": "Num seconds",
-        "event": "Final", "file_flag": "Both"},
-
-    "Load-numObjsRequested": {
-        "attr": "numObjsRequested", "y-label": "Num extra objs requested",
-        "event": "Load", "file_flag": "Diff"},
-    "Load-responseReceivedCount": {
-        "attr": "responseReceivedCount", "y-label": "Num extra objs loaded",
-        "event": "Load", "file_flag": "Diff"},
-    "Load-cumulativeEncodedDataLength_LF": {
-        "attr": "cumulativeEncodedDataLength_LF", "y-label": "Additional data transferred (KB)",
-        "event": "Load", "file_flag": "Diff"},
-    "Final-time_onLoad": {
-        "attr": "time_onLoad", "y-label": "Num extra seconds",
-        "event": "Final", "file_flag": "Diff"},
-    "Final-time_onLoad_Both": {
-        "attr": "time_onLoad", "y-label": "Num seconds",
-        "event": "Final", "file_flag": "Both"},
-
-    "Final-numObjsRequested": {
-        "attr": "numObjsRequested", "y-label": "Num extra objs requested",
-        "event": "Final", "file_flag": "Diff"},
-    "Final-responseReceivedCount": {
-        "attr": "responseReceivedCount", "y-label": "Num extra objs loaded",
-        "event": "Final", "file_flag": "Diff"},
-    "Final-cumulativeEncodedDataLength_LF": {
-        "attr": "cumulativeEncodedDataLength_LF", "y-label": "Additional data transferred (KB)",
-        "event": "Final", "file_flag": "Diff"},
-    "Final-time_finishLoad": {
-        "attr": "time_finishLoad", "y-label": "Num extra seconds",
-        "event": "Final", "file_flag": "Diff"},
-    "Final-time_finishLoad_Both": {
-        "attr": "time_finishLoad", "y-label": "Num seconds",
-        "event": "Final", "file_flag": "Both"}
-}
-
-def shouldExclude(target_key, fig_key, datapoint, denominator):
-    if target_key == fig_key:
-        if datapoint >= 20 or denominator == 0:
-            return True
-    return False
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -185,12 +39,6 @@ def parse_args():
     parser.add_argument('rank_cutoff', type=int,
                     help="All websites ranked higher than rank_cutoff in a given category will be included in the figure.  Websites ranked "+
                         "lower will be excluded.")
-    parser.add_argument('--exclude_list_mobile', type=str,
-                    help="A .json file containing mobile hostnames to exclude.  This is useful if, for example, "+
-                    "you want to filter out certain websites that are known to be special cases or outliers.")
-    parser.add_argument('--exclude_list_desktop', type=str,
-                    help="A .json file containing desktop hostnames to exclude.  This is useful if, for example, "+
-                    "you want to filter out certain websites that are known to be special cases or outliers.")
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -199,14 +47,10 @@ if __name__ == "__main__":
     args = parse_args()
     data_dir = args.data_dir
     rank_cutoff = args.rank_cutoff
-    exclude_list_mobile = args.exclude_list_mobile
-    exclude_list_desktop = args.exclude_list_desktop
 
     # prep directories
-    # fig_dir = os.path.join(data_dir, "figs-test-exclude-volatile/orig")
-    # csv_dir = os.path.join(data_dir, "CSVs-test-exclude-volatile/orig")
-    fig_dir = os.path.join(data_dir, "figs-test/orig")
-    csv_dir = os.path.join(data_dir, "CSVs-test/orig")
+    fig_dir = os.path.join(data_dir, fig_subdir)
+    csv_dir = os.path.join(data_dir, csv_subdir)
     summaries_dir = os.path.join(data_dir, "summaries")
     summaries_file_list = os.listdir(summaries_dir)
 
@@ -217,17 +61,21 @@ if __name__ == "__main__":
     aa = AdAnalysis(summaries_file_list)
     csv_files = os.listdir(csv_dir)
 
-    for csv_file in csv_files:
+    #for csv_file in csv_files:
+    for orig_file in aa.DICT_ORIG_CDFS:
+        csv_file = "orig-"+orig_file+"-list.csv"
         if csv_file[0] == '.':
             continue
         f_csv = open(os.path.join(csv_dir, csv_file), 'r')
         csv_reader = csv.reader(f_csv, delimiter=',')
         bar_plot = plt.figure(1, figsize=(8,3))
         cdf_plot = plt.figure(2, figsize=(4,3))
+        box_plot = plt.figure(3, figsize=(8,3))
         i = 0
         means = []
         yerrs = []
         labels = []
+        boxdata = []
         for row in csv_reader:
             if i%2 == 0:
                 hostnames = row[1:]
@@ -235,6 +83,7 @@ if __name__ == "__main__":
                 datapoints = row
                 label = datapoints[0].split(' ')[0]
                 datapoints = [float(y) for y in datapoints[1:]]
+                boxdata.append(datapoints)
                 avg = numpy.average(datapoints)
                 means.append(avg)
                 stdev = numpy.std(datapoints)
@@ -257,11 +106,27 @@ if __name__ == "__main__":
         bar_path = os.path.join(fig_dir, bar_fname)
         plt.savefig(bar_path, bbox_inches="tight")
 
-        plt.figure(2)
+        plt.figure(2)   # switch to cdf
         cdf_fname = csv_file[:-4]+"-cdf.pdf"
         cdf_path = os.path.join(fig_dir, cdf_fname)
-        cdf_plot.savefig(cdf_path, bbox_inches="tight")
+        plt.savefig(cdf_path, bbox_inches="tight")
         plt.close()
+
+        plt.figure(3)   # switch to box
+        fig, ax = plt.subplots(figsize=(12,4.5))
+        bp = ax.boxplot(boxdata, whis=0, showfliers=False)
+        try:
+            ylabel = aa.DICT_ORIG_CDFS[orig_file]["box_ylabel"]
+        except KeyError:
+            ylabel = None
+        ax.set_ylabel(ylabel)
+        ax.set_xticklabels(labels, rotation="vertical")
+        box_fname = csv_file[:-4]+"-box.pdf"
+        box_path = os.path.join(fig_dir, box_fname)
+        plt.savefig(box_path, bbox_inches="tight")
+        plt.close()
+        
+
 
     end_time = time.clock()
     elapsed_time = end_time - start_time
