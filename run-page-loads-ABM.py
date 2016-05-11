@@ -4,7 +4,7 @@ import json
 import argparse
 from MeasurePageLoad3 import MeasurePageLoad, connectToDevice, getNetworkType, shouldContinue, getDelayAndBandwidth
 from MeasurePageLoad3 import fixURL, getLocation, attemptConnection, getUserOS, getScreenDimensions
-from MeasurePageLoad3 import getTabNumber, getTabsJSON
+from MeasurePageLoad3 import getTabNumber, getTabsJSON, getMeasureTarget
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -59,6 +59,11 @@ if __name__ == "__main__":
     else:
         screen_width = None
         screen_height = None
+
+    if device_type == "computer":
+        measure = getMeasureTarget()
+    else:
+        measure = "ads"
     
     # Connect to browser and gather json info
     resp_json, shouldQuit = getTabsJSON(debug_port)
@@ -86,7 +91,7 @@ if __name__ == "__main__":
     
     mpl = MeasurePageLoad(url_ws, cutoff_time=cutoff_time, device_name=device_name, device_type=device_type, delay_NLC=delay_NLC,
                         bandwidth_NLC=bandwidth_NLC, debug_port=debug_port, network_type=network_type, location=location, output_dir=output_dir, op_sys=op_sys,
-                        start_time=start_time, min_time=min_time, screen_width=screen_width, screen_height=screen_height)
+                        start_time=start_time, min_time=min_time, screen_width=screen_width, screen_height=screen_height, measure=measure)
 
     mpl.setupOutputDirs()
 

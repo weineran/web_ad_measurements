@@ -276,6 +276,18 @@ def getUserOS():
         print("Invalid selection.")
         return getUserOS()
 
+def getMeasureTarget():
+    measure = raw_input("What would you like to measure?\n"+
+                        "1. Ads\n"+
+                        "2. Ad-blocker itself\n>")
+    if measure == '1':
+        return "ads"
+    elif measure == '2':
+        return "ad-blocker"
+    else:
+        print("Invalid selection.")
+        return getMeasureTarget()
+
 
 class MeasurePageLoad:
     """
@@ -286,7 +298,7 @@ class MeasurePageLoad:
     # constructor
     def __init__(self, url_ws, page_url = None, cutoff_time = None, device_name="no_name", device_type = "computer", delay_NLC=None,
                 bandwidth_NLC=None, debug_port=9222, phone_adBlockPackage="com.savageorgiev.blockthis", network_type=None, location=None,
-                 output_dir=None, op_sys=None, start_time=None, min_time=None, screen_width=None, screen_height=None):
+                 output_dir=None, op_sys=None, start_time=None, min_time=None, screen_width=None, screen_height=None, measure="ads"):
         self.url_ws = url_ws                 # url to use for the websocket.WebSocket object
         self.ws = None                      # websocket.Websocket object
         self.msg_list = []             # raw data - list of debug messages received from ws
@@ -299,6 +311,7 @@ class MeasurePageLoad:
         self.bandwidth_NLC = bandwidth_NLC
         self.screen_width = screen_width
         self.screen_height = screen_height
+        self.measure = measure
         self.op_sys = op_sys
         self.network_type = network_type
         self.start_time = start_time
@@ -465,10 +478,14 @@ class MeasurePageLoad:
             raise
 
     def isAdBlockEnabledComputer(self):
+        if self.measure == "ads":
+            target_title = "Adblock Plus"
+        elif self.measure == "ad-blocker":
+            target_title = "Adblock QMinus"
         r = requests.get("http://localhost:"+str(self.debug_port)+"/json")
         resp_json = r.json()
         for this_tab in resp_json:
-            if this_tab['title'] == "Adblock Plus":
+            if this_tab['title'] == target_title:
                 return True
 
         # if Adblock Plus not found in json obj, then not enabled
@@ -486,7 +503,8 @@ class MeasurePageLoad:
             if self.isAdBlockEnabled() == False:
                 print("Enabling ad-blocker")
                 self._enableAdBlockComputer()
-                self._disableAdBlockMinus()
+                if self.measure == "ads":
+                    self._disableAdBlockMinus()
                 print("Ad-blocker is now enabled")
             else:
                 print("Ad-blocker is already enabled")
@@ -504,7 +522,8 @@ class MeasurePageLoad:
     def disableAdBlock(self):
         if self.device_type == "computer":
             self._disableAdBlockComputer()
-            self._enableAdBlockMinus()
+            if self.measure == "ads":
+                self._enableAdBlockMinus()
         elif self.device_type == "phone":
             self._disableAdBlockPhone()
         else:
