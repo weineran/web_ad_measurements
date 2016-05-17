@@ -215,9 +215,9 @@ if __name__ == "__main__":
                 except TypeError:
                     datapoint_diff = None
 
-                datapoint_sum, datapoint_count = aa.appendDatapoint(datapoint_diff_list, datapoint_diff, datapoint_sum, datapoint_count, attr)
-                datapoint_blocking_sum, datapoint_blocking_count = aa.appendDatapoint(datapoint_blocking_list, datapoint_blocking, datapoint_blocking_sum, datapoint_blocking_count, attr)
-                datapoint_nonblocking_sum, datapoint_nonblocking_count = aa.appendDatapoint(datapoint_nonblocking_list, datapoint_nonblocking, datapoint_nonblocking_sum, datapoint_nonblocking_count, attr)
+                datapoint_sum, datapoint_count                          = aa.appendDatapoint(datapoint_diff_list, datapoint_diff, datapoint_sum, datapoint_count, attr)
+                datapoint_blocking_sum, datapoint_blocking_count        = aa.appendDatapoint(datapoint_blocking_list, datapoint_blocking, datapoint_blocking_sum, datapoint_blocking_count, attr)
+                datapoint_nonblocking_sum, datapoint_nonblocking_count  = aa.appendDatapoint(datapoint_nonblocking_list, datapoint_nonblocking, datapoint_nonblocking_sum, datapoint_nonblocking_count, attr)
 
             if len(datapoint_blocking_list) > 0:
                 med_blocking_datapoint = numpy.median(datapoint_blocking_list)
@@ -237,18 +237,6 @@ if __name__ == "__main__":
                 min_diff_datapoint = min(datapoint_diff_list)
                 max_diff_datapoint = max(datapoint_diff_list)
                 avg_diff_datapoint = numpy.average(datapoint_diff_list)
-
-                # insert datapoints
-                # cdf.insert(cdf_key+" (median)", med_diff_datapoint)
-                # cdf.insert(cdf_key+" (min-dif)", min_diff_datapoint)
-                # cdf.insert(cdf_key+" (max-dif)", max_diff_datapoint)
-                # cdf.insert(cdf_key+" (avg)", avg_diff_datapoint)
-
-                # add datapoints to datadict
-                # aa.addDatatoDict(data_dict, baseName, cdf_key+" (med-dif)", med_diff_datapoint)
-                # aa.addDatatoDict(data_dict, baseName, cdf_key+" (min-dif)", min_diff_datapoint)
-                # aa.addDatatoDict(data_dict, baseName, cdf_key+" (max-dif)", max_diff_datapoint)
-                # aa.addDatatoDict(data_dict, baseName, cdf_key+" (avg-dif)", avg_diff_datapoint)
 
             # make Range CDFs
             if fig_key in aa.DICT_RANGE_CDFS:
@@ -299,7 +287,7 @@ if __name__ == "__main__":
                     datapoint, key_suffix = aa.selectDatapoint(this_orig_cdf_method, min_nonblocking_datapoint, min_blocking_datapoint,
                                                                 max_diff_datapoint,
                                                                 med_blocking_datapoint, med_diff_datapoint)
-
+                    datapoint = -datapoint
                     if aa.shouldExclude("Load-numBlockedExplicitly", fig_key, datapoint, None, excludeNoAds, excludeTime):
                         if device_type == "phone":
                             new_exclude_dict_mobile[hostname] = True
@@ -412,9 +400,9 @@ if __name__ == "__main__":
         cdf = aa.DICT_ORIG_CDFS[cdf_name]["cdf"]
         #xlim = [-6,12]
         if useCategories:
-            cdf.plot(plotdir=fig_dir, title="", legend="lower right", bbox_to_anchor=(1.05, 1), lw=1.5, numSymbols=3)#, xlim=xlim)#styles={'linewidth':0.5})
+            cdf.plot(plotdir=fig_dir, title="", legend="upper left", bbox_to_anchor=(1.05, 1), lw=1.5, numSymbols=3)#, xlim=xlim)#styles={'linewidth':0.5})
         else:
-            cdf.plot(plotdir=fig_dir, title="", legend="lower right", lw=1.5, numSymbols=3)#, xlim=xlim)#styles={'linewidth':0.5}) bbox_to_anchor=(1.05, 1)
+            cdf.plot(plotdir=fig_dir, title="", legend="upper left", lw=1.5, numSymbols=3)#, xlim=xlim)#styles={'linewidth':0.5}) bbox_to_anchor=(1.05, 1)
         f_csv = open(os.path.join(csv_dir, cdf.baseName+".csv"), 'w')
         f_csv.write("key,avg,0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100"+nl)
         for key in cdf._cdfs:
