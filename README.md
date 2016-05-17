@@ -29,6 +29,35 @@ This readme will walk you through how to use the provided code to do the followi
 	<li>Ensure that <a href="http://developer.android.com/tools/help/adb.html">`adb.exe`</a> is in your computer's PATH</li>
 </ul>
 
+## Running an experiment on your computer
+<ol>
+	<li>Launch Chrome from command line with arguments:</br>
+  		<code>/path/to/chrome --args --remote-debugging-port=9222 --user-data-dir=/path/to/chrome-profile</code></br>    (use chrome-profile from Step 0a)</br></br>
+  		If you're not sure what <code>path/to/chrome</code> should be, you can try the following</br>
+  		Mac: <code>open -a Google\ Chrome</code></br>(not exactly a path, but whatever)</br>
+  		Windows: <code>"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"</code></li>
+	<li>Go to <code>chrome://extensions</code> in your browser.</li>
+	<li>Ensure that Adblock Plus is the first extension listed at the top of the list.  Ensure that the box is unchecked so that the extension is initially disabled.  NOTE: The list is alphabetical.  If there are other extensions listed above Adblock Plus, you will have to remove them by clicking the trash can icon.  For an explanation, see the section on Brittleness below.</li>
+	<li>Ensure that Adblock Minus ("Adblock QMinus") is the next extensions listed, directly beneath Adblock Plus.  Ensure that the box is checked so that the extension is initially enabled.</li>
+	<li>Ensure that the box for Developer Mode at the top of the page is unchecked</li>
+	<li>Make a directory to hold the data collected from the page loads.  e.g.</br>
+		<code>mkdir ~/page-load-data</code></li>
+	<li>Try a quick test run of the experiment:</br>
+		<code>python run-page-loads-ABM.py 5 2 url_lists/news-3.json /path/to/data/ 9222</code></br></br>
+		For an explanation of the arguments, you can run:</br>
+		<code>python run-page-loads-ABM.py -h</code></li>
+	<li>What you should see:</br>
+		<ul>
+			<li>Chrome will automatically enable/disable Adblock Plus and Adblock Minus.</li>
+			<li>Chrome will load each website in <code>url_lists/news-3.json</code> twice with Adblock Plus and twice with Adblock Minus, alternating between the two.</li>
+			<li>Each page load should last about 5 seconds.</li>
+			<li>Between each page load, Chrome will automatically navigate to <code>chrome://net-internals/#dns</code> and flush the browser's internal DNS cache.</li>
+			<li>At the end, your specified data directory should have a subdirectory called <code>raw/</code> and a subdirectory called <code>summaries/</code>.  Each should contain a file for each page load performed.</li>
+		</ul></li>
+	<li>If that worked, then you can try running the full experiment:
+		<code>python run-page-loads-ABM.py 15 5 url_lists/all-15.json /path/to/data/ 9222</code></li>
+</ol>
+
 ### Step 1. Plug in your phone
 Plug your phone into your computer via USB.
 ### Step 2. Open a Chrome tab on your phone
@@ -44,17 +73,3 @@ It will load each URL in the list and collect data for `5` seconds before loadin
 Data from each page load will be saved in a separate file in the output directory: `./`</br>
 For more info, you can run: `python chrome-automation-WebSocket.py -h`
 
-## Running an experiment on your computer
-<ol>
-	<li>Launch Chrome from command line with arguments:</br>
-  		<code>/path/to/chrome --args --remote-debugging-port=9222 --user-data-dir=/path/to/chrome-profile (use chrome-profile from step 0a)</code></li>
-	<li>Go to chrome://extensions in your browser.</li>
-	<li>Ensure that Adblock Plus is the first extension listed at the top of the list.</li>
-	<li>Ensure that Adblock Minus ("Adblock QMinus") is the next extensions listed, directly beneath Adblock Plus.</li>
-	<li>Ensure that the box for Developer Mode at the top of the page is unchecked</li>
-</ol>
-### Step 1. Open Chrome Canary on your computer
-Run: `/path/to/chrome-canary/chrome.exe --remote-debugging-port=9222`
-### Step
-### Step 2. Run the script
-Same as Step 4 above.
