@@ -1,16 +1,28 @@
 ## Flying Chrome by wire, loading pages, recording data
 This readme will walk you through how to use the provided code to do the following:
 <ul>
-	<li> Set up Chrome for "fly by wire" operation on your computer and also on an Android device.</li>
-	
+	<li> Set up Chrome for "fly by wire" operation on 1) your computer and 2) an Android device.</li>
+
 </ul>
 ### Step 0. Prerequisites
+<ol>
+  <li>Install <a href="https://www.google.com/chrome/browser/desktop/">Google Chrome</a> on your computer.</li>
+  <li>Create a directory that will serve as a separate User Profile for Chrome. e.g. </br>
+  		`mkdir ~/chrome-profile</br>
+  		Make a note of the name and location of this directory.</li>
+</ol>
+
+### Step 0a. Prerequisites for running experiment on computer
 <ul>
-  <li> Install <a href="https://www.google.com/chrome/browser/desktop/">Google Chrome</a> on your computer.</li>
-  <li> Get set up for Chrome remote debugging.</br>
-  Instructions <a href="https://developers.google.com/web/tools/chrome-devtools/debug/remote-debugging/remote-debugging?hl=en">here</a></br>
-  Troubleshooting <a href="http://stackoverflow.com/questions/21925992/chrome-devtools-devices-does-not-detect-device-when-plugged-in">here</a></li>
-  <li>Ensure that <a href="http://developer.android.com/tools/help/adb.html">`adb.exe`</a> is in your PATH</li>
+	<li>Download Adblock </li>
+</ul>
+
+### Step 0b. Prerequisites for running experiment on phone
+<ul>
+	<li> Get set up for Chrome remote debugging on Android device.</br>
+	  -Instructions <a href="https://developers.google.com/web/tools/chrome-devtools/debug/remote-debugging/remote-debugging?hl=en">here</a></br>
+	  -Troubleshooting <a href="http://stackoverflow.com/questions/21925992/chrome-devtools-devices-does-not-detect-device-when-plugged-in">here</a></li>
+	<li>Ensure that <a href="http://developer.android.com/tools/help/adb.html">`adb.exe`</a> is in your computer's PATH</li>
 </ul>
 
 ### Step 1. Plug in your phone
