@@ -1,1 +1,0 @@
-["http://www.cnn.com/", "http://espn.go.com/", "http://www.nytimes.com/"]
