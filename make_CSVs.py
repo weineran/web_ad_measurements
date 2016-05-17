@@ -12,9 +12,14 @@ from scipy.stats import linregress
 import statsmodels.distributions
 import csv
 
-doScatterPlots = True
-useCategories = True
-orig_cdf_method = "diff_of_mins"
+doScatterPlots = False
+useCategories = False
+orig_cdf_method = "median_diff"
+excludeNoAds = False
+excludeTime = False
+fig_subdir = "figs-5-11"
+csv_subdir = "CSVs-5-11"
+
 
 # For CDFs
 colors = ['b', 'g', 'r', 'c', 'm', 'k']
@@ -22,159 +27,6 @@ markers = ['o', '^', 's', 'v', '+']
 sep = ','
 nl = '\n'
 tab = "    "
-
-MASTER_DICT = {
-    "Final-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
-    "DOM-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
-    "Load-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
-    "Final-numObjsRequested": {"attr": "numObjsRequested",},
-    "DOM-numObjsRequested": {"attr": "numObjsRequested",},
-    "Load-numObjsRequested": {"attr": "numObjsRequested",},
-    "Final-responseReceivedCount": {"attr": "responseReceivedCount",},
-    "DOM-responseReceivedCount": {"attr": "responseReceivedCount",},
-    "Load-responseReceivedCount": {"attr": "responseReceivedCount",},
-    "Final-time_DOMContent": {"attr": "time_DOMContent",},
-    "Final-time_onLoad": {"attr": "time_onLoad",},
-    "Final-time_finishLoad": {"attr": "time_finishLoad",},
-    "DOM-cumulativeDataLength": {"attr": "cumulativeDataLength",},
-    "Load-cumulativeDataLength": {"attr": "cumulativeDataLength",},
-    "Final-cumulativeDataLength": {"attr": "cumulativeDataLength",},
-    "DOM-cumulativeEncodedDataLength_LF": {"attr": "cumulativeEncodedDataLength_LF",},
-    "Load-cumulativeEncodedDataLength_LF": {"attr": "cumulativeEncodedDataLength_LF",},
-    "Final-cumulativeEncodedDataLength_LF": {"attr": "cumulativeEncodedDataLength_LF",},
-    "DOM-cumulativeEncodedDataLength": {"attr": "cumulativeEncodedDataLength",},
-    "Load-cumulativeEncodedDataLength": {"attr": "cumulativeEncodedDataLength",},
-    "Final-cumulativeEncodedDataLength": {"attr": "cumulativeEncodedDataLength",},
-    "Load-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
-    "Load-responseReceivedCount": {"attr": "responseReceivedCount",},
-    "Load-responseReceivedCount-False": {"attr": "responseReceivedCount",},
-    "Load-numBlockedExplicitly-doPercent": {"attr": "numBlockedExplicitly",},
-    "Load-responseReceivedCount-doPercent": {"attr": "responseReceivedCount",},
-    "Load-responseReceivedCount-False-doPercent": {"attr": "responseReceivedCount",}
-}
-
-DICT_ORIG_CDFS = {
-    "Final-numBlockedExplicitly": {
-        "attr": "numBlockedExplicitly","x-label": "\nNumber of objects directly blocked", "file_flag": True, "event": "Final"},
-    "DOM-numBlockedExplicitly": {
-        "attr": "numBlockedExplicitly","x-label": "\nNumber of objects directly blocked", "file_flag": True, "event": "DOM"},
-    "Load-numBlockedExplicitly": {
-        "attr": "numBlockedExplicitly","x-label": "\nNumber of objects directly blocked", "file_flag": True, "event": "Load"},
-    "Final-numObjsRequested": {
-        "attr": "numObjsRequested","x-label": "\nNumber of extra objects requested", "file_flag": "Diff", "event": "Final"},
-    "DOM-numObjsRequested": {
-        "attr": "numObjsRequested","x-label": "\nNumber of extra objects requested", "file_flag": "Diff", "event": "DOM"},
-    "Load-numObjsRequested": {
-        "attr": "numObjsRequested","x-label": "\nNumber of extra objects requested", "file_flag": "Diff", "event": "Load"},
-    "Final-responseReceivedCount": {
-        "attr": "responseReceivedCount","x-label": "\nNumber of extra objects loaded", "file_flag": "Diff", "event": "Final"},
-    "DOM-responseReceivedCount": {
-        "attr": "responseReceivedCount","x-label": "\nNumber of extra objects loaded", "file_flag": "Diff", "event": "DOM"},
-    "Load-responseReceivedCount": {
-        "attr": "responseReceivedCount","x-label": "\nNumber of extra objects loaded", "file_flag": "Diff", "event": "Load"},
-    "Final-time_DOMContent": {
-        "attr": "time_DOMContent","x-label": "\nNumber of extra seconds to reach\nDOMContentLoaded event", "file_flag": "Diff", "event": "Final"},
-    "Final-time_onLoad": {
-        "attr": "time_onLoad","x-label": "\nNumber of extra seconds to reach\npage Load event", "file_flag": "Diff", "event": "Final"},
-    "Final-time_finishLoad": {
-        "attr": "time_finishLoad","x-label": "\nNumber of extra seconds to finish", "file_flag": "Diff", "event": "Final"},
-    "DOM-cumulativeDataLength": {
-        "attr": "cumulativeDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "DOM"},
-    "Load-cumulativeDataLength": {
-        "attr": "cumulativeDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Load"},
-    "Final-cumulativeDataLength": {
-        "attr": "cumulativeDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Final"},
-    "DOM-cumulativeEncodedDataLength_LF": {
-        "attr": "cumulativeEncodedDataLength_LF","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "DOM"},
-    "Load-cumulativeEncodedDataLength_LF": {
-        "attr": "cumulativeEncodedDataLength_LF","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Load"},
-    "Final-cumulativeEncodedDataLength_LF": {
-        "attr": "cumulativeEncodedDataLength_LF","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Final"},
-    "DOM-cumulativeEncodedDataLength": {
-        "attr": "cumulativeEncodedDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "DOM"},
-    "Load-cumulativeEncodedDataLength": {
-        "attr": "cumulativeEncodedDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Load"},
-    "Final-cumulativeEncodedDataLength": {
-        "attr": "cumulativeEncodedDataLength","x-label": "\nAdditional data transferred (KB)", "file_flag": "Diff", "event": "Final"}
-}
-
-
-DICT_RANGE_CDFS = {
-    "Load-numBlockedExplicitly": {
-        "attr": "numBlockedExplicitly", "y-label": "CDF of block count range",
-        "file_flag": True, "doPercent": False},
-    "Load-responseReceivedCount": {
-        "attr": "responseReceivedCount", "y-label": "CDF of 'block' count range",
-        "file_flag": "Diff", "doPercent": False},
-    "Load-responseReceivedCount-False": {
-        "attr": "responseReceivedCount", "y-label": "CDF of obj count range",
-        "file_flag": False, "doPercent": False},
-    "Load-numBlockedExplicitly-doPercent": {
-        "attr": "numBlockedExplicitly", "y-label": "CDF of block count range",
-        "file_flag": True, "doPercent": True},
-    "Load-responseReceivedCount-doPercent": {
-        "attr": "responseReceivedCount", "y-label": "CDF of 'block' count range",
-        "file_flag": "Diff", "doPercent": True},
-    "Load-responseReceivedCount-False-doPercent": {
-        "attr": "responseReceivedCount", "y-label": "CDF of obj count range",
-        "file_flag": False, "doPercent": True}
-}
-
-DICT_Y_VS_EXPLICITLY_BLOCKED = {
-    "DOM-numObjsRequested": {
-        "attr": "numObjsRequested", "y-label": "Num extra objs requested",
-        "event": "DOM", "file_flag": "Diff"},
-    "DOM-responseReceivedCount": {
-        "attr": "responseReceivedCount", "y-label": "Num extra objs loaded",
-        "event": "DOM", "file_flag": "Diff"},
-    "DOM-cumulativeEncodedDataLength_LF": {
-        "attr": "cumulativeEncodedDataLength_LF", "y-label": "Additional data transferred (KB)",
-        "event": "DOM", "file_flag": "Diff"},
-    "Final-time_DOMContent": {
-        "attr": "time_DOMContent", "y-label": "Num extra seconds",
-        "event": "Final", "file_flag": "Diff"},
-    "Final-time_DOMContent_Both": {
-        "attr": "time_DOMContent", "y-label": "Num seconds",
-        "event": "Final", "file_flag": "Both"},
-
-    "Load-numObjsRequested": {
-        "attr": "numObjsRequested", "y-label": "Num extra objs requested",
-        "event": "Load", "file_flag": "Diff"},
-    "Load-responseReceivedCount": {
-        "attr": "responseReceivedCount", "y-label": "Num extra objs loaded",
-        "event": "Load", "file_flag": "Diff"},
-    "Load-cumulativeEncodedDataLength_LF": {
-        "attr": "cumulativeEncodedDataLength_LF", "y-label": "Additional data transferred (KB)",
-        "event": "Load", "file_flag": "Diff"},
-    "Final-time_onLoad": {
-        "attr": "time_onLoad", "y-label": "Num extra seconds",
-        "event": "Final", "file_flag": "Diff"},
-    "Final-time_onLoad_Both": {
-        "attr": "time_onLoad", "y-label": "Num seconds",
-        "event": "Final", "file_flag": "Both"},
-
-    "Final-numObjsRequested": {
-        "attr": "numObjsRequested", "y-label": "Num extra objs requested",
-        "event": "Final", "file_flag": "Diff"},
-    "Final-responseReceivedCount": {
-        "attr": "responseReceivedCount", "y-label": "Num extra objs loaded",
-        "event": "Final", "file_flag": "Diff"},
-    "Final-cumulativeEncodedDataLength_LF": {
-        "attr": "cumulativeEncodedDataLength_LF", "y-label": "Additional data transferred (KB)",
-        "event": "Final", "file_flag": "Diff"},
-    "Final-time_finishLoad": {
-        "attr": "time_finishLoad", "y-label": "Num extra seconds",
-        "event": "Final", "file_flag": "Diff"},
-    "Final-time_finishLoad_Both": {
-        "attr": "time_finishLoad", "y-label": "Num seconds",
-        "event": "Final", "file_flag": "Both"}
-}
-
-def shouldExclude(target_key, fig_key, datapoint, denominator):
-    if target_key == fig_key:
-        if datapoint >= 20 or denominator == 0:
-            return True
-    return False
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -203,11 +55,12 @@ if __name__ == "__main__":
     exclude_list_desktop = args.exclude_list_desktop
 
     # prep directories
+    fig_dir = os.path.join(data_dir, fig_subdir)
+    csv_dir = os.path.join(data_dir, csv_subdir)
     list_out_dir = os.path.join(data_dir, "measured_lists")
     raw_data_dir = os.path.join(data_dir, "raw")
     summaries_dir = os.path.join(data_dir, "summaries")
-    fig_dir = os.path.join(data_dir, "figs-test-exclude-volatile")
-    csv_dir = os.path.join(data_dir, "CSVs-test-exclude-volatile")
+
     raw_data_file_list = os.listdir(raw_data_dir)
     summaries_file_list = os.listdir(summaries_dir)
     if not os.path.isdir(fig_dir):
@@ -222,22 +75,22 @@ if __name__ == "__main__":
     # create list of cdfs
     resolution = 0.1
     data_dict = {}
-    for baseName in MASTER_DICT:
-        if baseName in DICT_ORIG_CDFS:
+    for baseName in aa.MASTER_DICT:
+        if baseName in aa.DICT_ORIG_CDFS:
             data_dict[baseName] = {}
             # make a list of cdfs
             attr = baseName.split('-',1)[1]
-            DICT_ORIG_CDFS[baseName]["raw_data"] = {} # <cdf_key, (fname, raw_data)[]>
+            aa.DICT_ORIG_CDFS[baseName]["raw_data"] = {} # <cdf_key, (fname, raw_data)[]>
 
     # create dict of scatter plots
-    for y_label in DICT_Y_VS_EXPLICITLY_BLOCKED:
-        DICT_Y_VS_EXPLICITLY_BLOCKED[y_label]["x_vals"] = {}    # {phone_4g: [], computer-wifi: [], etc}
-        DICT_Y_VS_EXPLICITLY_BLOCKED[y_label]["y_vals"] = {}    # {phone_4g: [], computer-wifi: [], etc}
-        DICT_Y_VS_EXPLICITLY_BLOCKED[y_label]["hostnames"] = {}    # {phone_4g: [], computer-wifi: [], etc}
+    for y_label in aa.DICT_Y_VS_EXPLICITLY_BLOCKED:
+        aa.DICT_Y_VS_EXPLICITLY_BLOCKED[y_label]["x_vals"] = {}    # {phone_4g: [], computer-wifi: [], etc}
+        aa.DICT_Y_VS_EXPLICITLY_BLOCKED[y_label]["y_vals"] = {}    # {phone_4g: [], computer-wifi: [], etc}
+        aa.DICT_Y_VS_EXPLICITLY_BLOCKED[y_label]["hostnames"] = {}    # {phone_4g: [], computer-wifi: [], etc}
 
     # create dict of range CDFs
-    for range_cdf in DICT_RANGE_CDFS:
-        DICT_RANGE_CDFS[range_cdf]["raw_data"] = {} # <cdf_key, (fname, raw_data)[]>
+    for range_cdf in aa.DICT_RANGE_CDFS:
+        aa.DICT_RANGE_CDFS[range_cdf]["raw_data"] = {} # <cdf_key, (fname, raw_data)[]>
 
     ad_compare_dict = {}
     chron_compare_dict = {}
@@ -326,11 +179,11 @@ if __name__ == "__main__":
         else:
             continue
 
-        for fig_key in MASTER_DICT:
+        for fig_key in aa.MASTER_DICT:
             baseName = fig_key
-            attr = MASTER_DICT[fig_key]["attr"]
-            #file_flag = DICT_ORIG_CDFS[baseName]["file_flag"]
-            #event = DICT_ORIG_CDFS[baseName]["event"]
+            attr = aa.MASTER_DICT[fig_key]["attr"]
+            #file_flag = aa.DICT_ORIG_CDFS[baseName]["file_flag"]
+            #event = aa.DICT_ORIG_CDFS[baseName]["event"]
             event = baseName.split('-',1)[0]
             datapoint_sum = 0
             datapoint_count = 0
@@ -393,9 +246,9 @@ if __name__ == "__main__":
             sample_num = aa.getSampleNum(key_file)
 
             # make Range CDFs
-            if fig_key in DICT_RANGE_CDFS:
+            if fig_key in aa.DICT_RANGE_CDFS:
                 if len(datapoint_blocking_list) > 0 and len(datapoint_nonblocking_list) > 0:
-                    ff = DICT_RANGE_CDFS[baseName]["file_flag"]
+                    ff = aa.DICT_RANGE_CDFS[baseName]["file_flag"]
                     if ff == "Diff":
                         range_datapoint = max_diff_datapoint - min_diff_datapoint
                         denominator = min_diff_datapoint
@@ -406,13 +259,13 @@ if __name__ == "__main__":
                         range_datapoint = max_nonblocking_datapoint - min_nonblocking_datapoint
                         denominator = min_nonblocking_datapoint
 
-                    if DICT_RANGE_CDFS[fig_key]["doPercent"] == True:
+                    if aa.DICT_RANGE_CDFS[fig_key]["doPercent"] == True:
                         try:
                             range_datapoint = (float(range_datapoint) / float(denominator))*100
                         except (ZeroDivisionError, TypeError):
                             range_datapoint = None
 
-                    if shouldExclude("Load-responseReceivedCount-False-doPercent", fig_key, range_datapoint, denominator):
+                    if aa.shouldExclude("Load-responseReceivedCount-False-doPercent", fig_key, range_datapoint, denominator, excludeNoAds, excludeTime):
                         if device_type == "phone":
                             new_exclude_dict_mobile[hostname] = True
                         elif device_type == "computer":
@@ -421,35 +274,42 @@ if __name__ == "__main__":
                     label = str(ff)+'-'+hostname
                     if range_datapoint != None:
                         try:
-                            DICT_RANGE_CDFS[baseName]["raw_data"][cdf_key].append((label, range_datapoint))
+                            aa.DICT_RANGE_CDFS[baseName]["raw_data"][cdf_key].append((label, range_datapoint))
                         except KeyError:
-                            DICT_RANGE_CDFS[baseName]["raw_data"][cdf_key] = [(label, range_datapoint)]
+                            aa.DICT_RANGE_CDFS[baseName]["raw_data"][cdf_key] = [(label, range_datapoint)]
                         else:
                             pass
 
-            if fig_key in DICT_ORIG_CDFS:
+            if fig_key in aa.DICT_ORIG_CDFS:
                 label = hostname
                 if len(datapoint_blocking_list) > 0 and len(datapoint_nonblocking_list) > 0:
-                    key_suffix = " ("+orig_cdf_method+')'
-                    if orig_cdf_method == "diff_of_mins":
-                        datapoint = min_nonblocking_datapoint - min_blocking_datapoint
-                    elif orig_cdf_method == "max_diff":
-                        datapoint = max_diff_datapoint
-                    elif orig_cdf_method == "median_diff":
-                        datapoing = med_diff_datapoint
+                    try:
+                        this_orig_cdf_method = aa.DICT_ORIG_CDFS[fig_key]["method"]
+                    except KeyError:
+                        this_orig_cdf_method = orig_cdf_method
+
+                    datapoint, key_suffix = aa.selectDatapoint(this_orig_cdf_method, min_nonblocking_datapoint, min_blocking_datapoint,
+                                                                max_diff_datapoint,
+                                                                med_blocking_datapoint, med_diff_datapoint)
+
+                    if aa.shouldExclude("Load-numBlockedExplicitly", fig_key, datapoint, None, excludeNoAds, excludeTime):
+                        if device_type == "phone":
+                            new_exclude_dict_mobile[hostname] = True
+                        elif device_type == "computer":
+                            new_exclude_dict_desktop[hostname] = True
 
                     if useCategories:
                         for category in categories_dict:
                             if categories_dict[category] <= rank_cutoff:
                                 try:
-                                    DICT_ORIG_CDFS[fig_key]["raw_data"][category+key_suffix].append((label, datapoint))
+                                    aa.DICT_ORIG_CDFS[fig_key]["raw_data"][category+key_suffix].append((label, datapoint))
                                 except KeyError:
-                                    DICT_ORIG_CDFS[fig_key]["raw_data"][category+key_suffix] = [(label, datapoint)]
+                                    aa.DICT_ORIG_CDFS[fig_key]["raw_data"][category+key_suffix] = [(label, datapoint)]
                     else:
                         try:
-                            DICT_ORIG_CDFS[fig_key]["raw_data"][cdf_key].append((label, datapoint))
+                            aa.DICT_ORIG_CDFS[fig_key]["raw_data"][cdf_key].append((label, datapoint))
                         except KeyError:
-                            DICT_ORIG_CDFS[fig_key]["raw_data"][cdf_key] = [(label, datapoint)]
+                            aa.DICT_ORIG_CDFS[fig_key]["raw_data"][cdf_key] = [(label, datapoint)]
 
         # FINISH LOOPING THROUGH CDFs
 
@@ -457,10 +317,10 @@ if __name__ == "__main__":
         # This loop is executed for each file
         # We add this file (or rather file group) to the plot data
         if doScatterPlots:
-            for this_scatterPlot in DICT_Y_VS_EXPLICITLY_BLOCKED:
-                event = DICT_Y_VS_EXPLICITLY_BLOCKED[this_scatterPlot]["event"]
-                y_attr = DICT_Y_VS_EXPLICITLY_BLOCKED[this_scatterPlot]["attr"]
-                file_flag = DICT_Y_VS_EXPLICITLY_BLOCKED[this_scatterPlot]["file_flag"]
+            for this_scatterPlot in aa.DICT_Y_VS_EXPLICITLY_BLOCKED:
+                event = aa.DICT_Y_VS_EXPLICITLY_BLOCKED[this_scatterPlot]["event"]
+                y_attr = aa.DICT_Y_VS_EXPLICITLY_BLOCKED[this_scatterPlot]["attr"]
+                file_flag = aa.DICT_Y_VS_EXPLICITLY_BLOCKED[this_scatterPlot]["file_flag"]
                 #cdf_key = aa.getDevice(key_file)
                 cdf_key = aa.getCDFKey(key_file)
                 for dict_pair in list_of_dicts:
@@ -499,7 +359,7 @@ if __name__ == "__main__":
     # FINISH LOOPING THROUGH FILES
 
     # plot range CDFs
-    for range_cdf in DICT_RANGE_CDFS:
+    for range_cdf in aa.DICT_RANGE_CDFS:
         i = 0
         directory = os.path.join(csv_dir, "range")
         if not os.path.isdir(directory):
@@ -507,9 +367,9 @@ if __name__ == "__main__":
         csv_fname = os.path.join(directory, "rng-"+range_cdf+".csv")
         f_csv = open(csv_fname, 'w')
         csv_writer = csv.writer(f_csv, delimiter=',')
-        for cdf_key in DICT_RANGE_CDFS[range_cdf]["raw_data"]:
+        for cdf_key in aa.DICT_RANGE_CDFS[range_cdf]["raw_data"]:
             # get data out of dict
-            fname_and_raw_data = DICT_RANGE_CDFS[range_cdf]["raw_data"][cdf_key]
+            fname_and_raw_data = aa.DICT_RANGE_CDFS[range_cdf]["raw_data"][cdf_key]
             fname_and_raw_data = sorted(fname_and_raw_data, key=lambda elem: elem[1])
             raw_data = [elem[1] for elem in fname_and_raw_data]
             fnames = [elem[0] for elem in fname_and_raw_data]
@@ -524,7 +384,7 @@ if __name__ == "__main__":
         f_csv.close()
 
 
-    for cdf_name in DICT_ORIG_CDFS:
+    for cdf_name in aa.DICT_ORIG_CDFS:
         directory = os.path.join(csv_dir, "orig-percentiles")
         if not os.path.isdir(directory):
             os.mkdir(directory)
@@ -537,9 +397,9 @@ if __name__ == "__main__":
         csv_writer = csv.writer(f_csv, delimiter=',')
 
         f_csv_percentile.write("key,avg,0,10,25,50,75,80,90,100"+nl)    # header row
-        for cdf_key in DICT_ORIG_CDFS[cdf_name]["raw_data"]:
+        for cdf_key in aa.DICT_ORIG_CDFS[cdf_name]["raw_data"]:
             # get data out of dict
-            fname_and_raw_data = DICT_ORIG_CDFS[cdf_name]["raw_data"][cdf_key]
+            fname_and_raw_data = aa.DICT_ORIG_CDFS[cdf_name]["raw_data"][cdf_key]
             fname_and_raw_data = sorted(fname_and_raw_data, key=lambda elem: elem[1])
             raw_data = [elem[1] for elem in fname_and_raw_data]
             fnames = [elem[0] for elem in fname_and_raw_data]
@@ -556,7 +416,7 @@ if __name__ == "__main__":
 
     if doScatterPlots:
         xlabel = "Num objs directly blocked"
-        for scatterPlot in DICT_Y_VS_EXPLICITLY_BLOCKED:
+        for scatterPlot in aa.DICT_Y_VS_EXPLICITLY_BLOCKED:
             directory = os.path.join(csv_dir, "scatter")
             if not os.path.isdir(directory):
                 os.mkdir(directory)
@@ -565,11 +425,11 @@ if __name__ == "__main__":
             caption_x = 1.3
             caption_y = 0.5
             stats = ""
-            ylabel = DICT_Y_VS_EXPLICITLY_BLOCKED[scatterPlot]["y-label"]
-            file_flag = DICT_Y_VS_EXPLICITLY_BLOCKED[scatterPlot]["file_flag"]
-            x_vals = DICT_Y_VS_EXPLICITLY_BLOCKED[scatterPlot]["x_vals"]
-            y_vals = DICT_Y_VS_EXPLICITLY_BLOCKED[scatterPlot]["y_vals"]
-            hostnames = DICT_Y_VS_EXPLICITLY_BLOCKED[scatterPlot]["hostnames"]
+            ylabel = aa.DICT_Y_VS_EXPLICITLY_BLOCKED[scatterPlot]["y-label"]
+            file_flag = aa.DICT_Y_VS_EXPLICITLY_BLOCKED[scatterPlot]["file_flag"]
+            x_vals = aa.DICT_Y_VS_EXPLICITLY_BLOCKED[scatterPlot]["x_vals"]
+            y_vals = aa.DICT_Y_VS_EXPLICITLY_BLOCKED[scatterPlot]["y_vals"]
+            hostnames = aa.DICT_Y_VS_EXPLICITLY_BLOCKED[scatterPlot]["hostnames"]
             i = 0
             for series_label in x_vals:
                 x = x_vals[series_label]
