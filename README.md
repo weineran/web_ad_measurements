@@ -58,7 +58,7 @@ This readme will walk you through how to use the provided code to do the followi
 			<li>Between each page load, Chrome will automatically navigate to <code>chrome://net-internals/#dns</code> and flush the browser's internal DNS cache.</li>
 			<li>At the end, your specified data directory should have a subdirectory called <code>raw/</code> and a subdirectory called <code>summaries/</code>.  Each should contain a file for each page load performed.</li>
 		</ul></li>
-	<li>If that worked, then you can try running the full experiment:
+	<li>If that worked, then you can try running the full experiment:</br>
 		<code>python run-page-loads-ABM.py 15 5 url_lists/all-15.json /path/to/data/ 9222</code></li>
 </ol>
 
@@ -72,20 +72,21 @@ This readme will walk you through how to use the provided code to do the followi
 	<li>Try a quick test run of the experiment:</br>
 		<code>python run-page-loads-ABM.py 5 2 url_lists/news-3.json /path/to/data/ 9222</code></br></br>
 	</li>
+	<li>
+		<ul>
+			<li>Again, the script will prompt you with several questions.  You will have to know the width and height of your phone's screen in pixels.</li>
+			<li>You should see Chrome on your phone loading websites automatically, similar to above.</li>
+			<li>You will also see your phone launching and enabling the Block This! app.  The script also kills the app, but you probably won't be able to visually confirm this.</li>
+		</ul>
+	</li>
 	
 </ol>
-### Step 1. Plug in your phone
-Plug your phone into your computer via USB.
-### Step 2. Open a Chrome tab on your phone
-Self explanatory.
-### Step 3. Open Chrome Canary on your computer
-Open Chrome Canary and navigate to `chrome://inspect/`</br>
-Confirm that you see your phone's Chrome tab listed here.
-### Step 4. Run the script
-Run: `python chrome-automation-WebSocket.py 5 ./url_list.txt ./`</br>
-You may be prompted for a little additional info while the script is running.</br>
-The script will look in the file `url_list.txt` for a list of URLs to load.</br>
-It will load each URL in the list and collect data for `5` seconds before loading the next URL in the list.</br>
-Data from each page load will be saved in a separate file in the output directory: `./`</br>
-For more info, you can run: `python chrome-automation-WebSocket.py -h`
+
+## Brittleness
+Unfortunately, some parts of this script are extremely brittle/fragile.  Most of these are due to the fact that we are automating tasks that weren't really designed to be automated.  Here is a partial list of the features that I consider brittle:</br>
+<ul>
+	<li>Enabling/disabling extensions on the computer.  This is accomplished by programmatically passing keyboard events into Chrome.  For example, enabling the Adblock Plus extension is accomplished by navigating to `chrome://extensions`, passing a "tab" key press 3 times to highlight the checkbox next to the extension, then passing a "spacebar" key press to check the box.  Obviously, a change in the layout of the `chrome://extensions` page will foil this approach.</li>
+	<li>Clearing the browser's internal DNS cache.  Also accomplished by passing a specific number of "tab" key presses followed by "spacebar."</li>
+	<li>Enabling Block This! on Android.  This is accomplished by passing `input tap` commands through the adb shell.  The script does a series of screen captures of the phone's screen to detect when the app has opened, then passes in a well-placed "tap" to hit the Start button.  The location of the Start button (and hence the desired location of the tap event) is determined by the phone's screen dimensions, which is why the script prompts the user to enter screen width and height.</li>
+</ul>
 
