@@ -2,9 +2,9 @@ import requests
 import time
 import json
 import argparse
-from MeasurePageLoad3 import MeasurePageLoad, connectToDevice, getNetworkType, shouldContinue, getDelayAndBandwidth
-from MeasurePageLoad3 import fixURL, getLocation, attemptConnection, getUserOS, getScreenDimensions
-from MeasurePageLoad3 import getTabNumber, getTabsJSON, getMeasureTarget
+from MeasurePageLoad import MeasurePageLoad, connectToDevice, getNetworkType, shouldContinue, getDelayAndBandwidth
+from MeasurePageLoad import fixURL, getLocation, attemptConnection, getUserOS, getScreenDimensions
+from MeasurePageLoad import getTabNumber, getTabsJSON, getMeasureTarget
 
 def parse_args():
     parser = argparse.ArgumentParser(
