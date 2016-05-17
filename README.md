@@ -20,7 +20,7 @@ This readme will walk you through how to use the provided code to do the followi
 		-The hard way: Clone repo and build from source (https://hg.adblockplus.org/adblockpluschrome/).
 		The advantage of the hard way is that it ensures a proper apples-to-apples comparison with Adblock Minus, which you will have to build from source.</br>
 		-The easy way: Install from Chrome Webstore (https://chrome.google.com/webstore/detail/adblock-plus/cfhdojbkjhnklbpkdaibdccddilifddb).  The advantage of the easy way is that it is easy.</li>
-	<li>Clone and build Adblock Minus.  https://github.com/weineran/adblockminuschrome<li>
+	<li>Clone and build Adblock Minus.  https://github.com/weineran/adblockminuschrome</li>
 	<li>Go to chrome://extensions in your browser.</li>
 	<li>Ensure that Adblock Plus is the first extension listed at the top of the list.</li>
 	<li>Ensure that Adblock Minus ("Adblock QMinus") is the next extensions listed, directly beneath Adblock Plus.</li>
