@@ -7,15 +7,20 @@ This readme will walk you through how to use the provided code to do the followi
 ### Step 0. Prerequisites
 <ol>
   <li>Install <a href="https://www.google.com/chrome/browser/desktop/">Google Chrome</a> on your computer.</li>
-  <li>Create a directory that will serve as a separate User Profile for Chrome. e.g. </br>
-  		`mkdir ~/chrome-profile</br>
-  		Make a note of the name and location of this directory.</li>
 </ol>
 
 ### Step 0a. Prerequisites for running experiment on computer
-<ul>
-	<li>Download Adblock </li>
-</ul>
+<ol>
+	<li>Create a directory that will serve as a separate User Profile for Chrome. e.g. </br>
+  		<code>mkdir ~/chrome-profile</code></br>
+  		Make a note of the name and location of this directory.</li>
+  	<li>Launch Chrome from command line with arguments:</br>
+  		<code>/path/to/chrome --args --remote-debugging-port=9222 --user-data-dir=/path/to/chrome-profile (see above)</code></li>
+	<li>Download and install Adblock Plus.  There are two ways to do this.</br>
+		-The hard way: Clone repo and build from source (https://hg.adblockplus.org/adblockpluschrome/).
+		The advantage of the hard way is that it ensures a proper apples-to-apples comparison with Adblock Minus, which you will have to build from source.</br>
+		-The easy way: Install from Chrome Webstore (https://chrome.google.com/webstore/detail/adblock-plus/cfhdojbkjhnklbpkdaibdccddilifddb).  The advantage of the easy way is that it is easy.</li>
+</ol>
 
 ### Step 0b. Prerequisites for running experiment on phone
 <ul>
