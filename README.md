@@ -14,17 +14,11 @@ This readme will walk you through how to use the provided code to do the followi
 	<li>Create a directory that will serve as a separate User Profile for Chrome. e.g. </br>
   		<code>mkdir ~/chrome-profile</code></br>
   		Make a note of the name and location of this directory.</li>
-  	<li>Launch Chrome from command line with arguments:</br>
-  		<code>/path/to/chrome --args --remote-debugging-port=9222 --user-data-dir=/path/to/chrome-profile (use chrome-profile from step 1)</code></li>
 	<li>Download and install Adblock Plus.  There are two ways to do this.</br>
 		-The hard way: Clone repo and build from source (https://hg.adblockplus.org/adblockpluschrome/).
 		The advantage of the hard way is that it ensures a proper apples-to-apples comparison with Adblock Minus, which you will have to build from source.</br>
 		-The easy way: Install from Chrome Webstore (https://chrome.google.com/webstore/detail/adblock-plus/cfhdojbkjhnklbpkdaibdccddilifddb).  The advantage of the easy way is that it is easy.</li>
 	<li>Clone and build Adblock Minus.  https://github.com/weineran/adblockminuschrome</li>
-	<li>Go to chrome://extensions in your browser.</li>
-	<li>Ensure that Adblock Plus is the first extension listed at the top of the list.</li>
-	<li>Ensure that Adblock Minus ("Adblock QMinus") is the next extensions listed, directly beneath Adblock Plus.</li>
-	<li>Ensure that the box for Developer Mode at the top of the page is unchecked</li>
 </ol>
 
 ### Step 0b. Prerequisites for running experiment on phone
@@ -50,10 +44,17 @@ It will load each URL in the list and collect data for `5` seconds before loadin
 Data from each page load will be saved in a separate file in the output directory: `./`</br>
 For more info, you can run: `python chrome-automation-WebSocket.py -h`
 
-## Getting started: Loading a few pages in a row on your computer
-### Step 0. Prerequisites
-Same Step 0 from the phone instructions above, except that you don't need `adb`.
+## Running an experiment on your computer
+<ol>
+	<li>Launch Chrome from command line with arguments:</br>
+  		<code>/path/to/chrome --args --remote-debugging-port=9222 --user-data-dir=/path/to/chrome-profile (use chrome-profile from step 0a)</code></li>
+	<li>Go to chrome://extensions in your browser.</li>
+	<li>Ensure that Adblock Plus is the first extension listed at the top of the list.</li>
+	<li>Ensure that Adblock Minus ("Adblock QMinus") is the next extensions listed, directly beneath Adblock Plus.</li>
+	<li>Ensure that the box for Developer Mode at the top of the page is unchecked</li>
+</ol>
 ### Step 1. Open Chrome Canary on your computer
 Run: `/path/to/chrome-canary/chrome.exe --remote-debugging-port=9222`
+### Step
 ### Step 2. Run the script
 Same as Step 4 above.
