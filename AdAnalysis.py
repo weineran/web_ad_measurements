@@ -23,9 +23,14 @@ class AdAnalysis:
         self.summaries_file_list = summaries_file_list
         self.max_sample_num = self.getMaxSampleNum()
         self.LEGEND_DICT = OrderedDict([("phone-4g", "Smartphone (4G)"),
-                            ("phone-wifi", "Smartphone (WiFi)"),
-                            ("computer-wifi", "Laptop (WiFi)"),
-                            ("MacBookPro-wired", "Laptop (Wired)")])
+                                        ("phone-wifi", "Smartphone (WiFi)"),
+                                        ("computer-wifi", "Laptop (WiFi)"),
+                                        #("MacBookPro-wired", "MacBookPro (Wired)"),
+                                        ("MacBookPro-wired", "University"),
+                                        ("MacMini-wired", "MacMini (Wired)"),
+                                        ("MacBookPro-wired_325ms_1500.0Kbps", "325 ms,\n1,500 Kbps\n(In-Flight)"),
+                                        ("MacBookPro-wired_240ms_NoneKbps", "240 ms\n(satellite)"),
+                                        ("MacBookPro-wired_0ms_512.0Kbps", "512 Kbps\n(Botswana)")])
         self.MASTER_DICT = {
             "Final-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
             "DOM-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
@@ -38,6 +43,8 @@ class AdAnalysis:
             "Load-responseReceivedCount": {"attr": "responseReceivedCount",},
             "Final-time_DOMContent": {"attr": "time_DOMContent",},
             "Final-time_onLoad": {"attr": "time_onLoad",},
+            "Final-time_onLoad-False": {"attr": "time_onLoad",},
+            "Final-time_onLoad-False-doPercent": {"attr": "time_onLoad",},
             "Final-time_finishLoad": {"attr": "time_finishLoad",},
             "DOM-cumulativeDataLength": {"attr": "cumulativeDataLength",},
             "Load-cumulativeDataLength": {"attr": "cumulativeDataLength",},
@@ -51,6 +58,8 @@ class AdAnalysis:
             "Load-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
             "Load-responseReceivedCount": {"attr": "responseReceivedCount",},
             "Load-responseReceivedCount-False": {"attr": "responseReceivedCount",},
+            "Load-responseReceivedCount-True": {"attr": "responseReceivedCount"},
+            "Load-responseReceivedCount-True-doPercent": {"attr": "responseReceivedCount"},
             "Load-numBlockedExplicitly-doPercent": {"attr": "numBlockedExplicitly",},
             "Load-responseReceivedCount-doPercent": {"attr": "responseReceivedCount",},
             "Load-responseReceivedCount-False-doPercent": {"attr": "responseReceivedCount",}
@@ -74,7 +83,7 @@ class AdAnalysis:
                 "attr": "responseReceivedCount","x-label": "Number of objects", "file_flag": "Diff", "event": "DOM"},
             "Load-responseReceivedCount": {
                 "attr": "responseReceivedCount","x-label": "Number of objects", "file_flag": "Diff", "event": "Load", 
-                "method": "median_diff", "box_ylabel": "Number of ad objects"},
+                "method": "max_diff", "box_ylabel": "Number of ad objects"},
             "Final-time_DOMContent": {
                 "attr": "time_DOMContent","x-label": "Seconds", "file_flag": "Diff", "event": "Final"},
             "Final-time_onLoad": {
@@ -110,6 +119,9 @@ class AdAnalysis:
             "Load-responseReceivedCount-False": {
                 "attr": "responseReceivedCount", "y-label": "CDF of obj count range",
                 "file_flag": False, "doPercent": False},
+            "Load-responseReceivedCount-True": {
+                "attr": "responseReceivedCount", "y-label": "CDF of obj count range",
+                "file_flag": True, "doPercent": False},
             "Load-numBlockedExplicitly-doPercent": {
                 "attr": "numBlockedExplicitly", "y-label": "CDF of block count range",
                 "file_flag": True, "doPercent": True},
@@ -118,7 +130,19 @@ class AdAnalysis:
                 "file_flag": "Diff", "doPercent": True},
             "Load-responseReceivedCount-False-doPercent": {
                 "attr": "responseReceivedCount", "y-label": "CDF of obj count variability",
-                "x-label": "% variability", "file_flag": False, "doPercent": True}
+                "x-label": "% variability", "file_flag": False, "doPercent": True},
+            "Load-responseReceivedCount-True-doPercent": {
+                "attr": "responseReceivedCount", "y-label": "CDF of obj count variability",
+                "x-label": "% variability", "file_flag": True, "doPercent": True},
+            "Final-time_onLoad": {
+                "attr": "time_onLoad", "y-label": "CDF of range of load time cost",
+                "x-label": "Max time impact minus min time impact", "file_flag": "Diff", "doPercent": False},
+            "Final-time_onLoad-False": {
+                "attr": "time_onLoad", "y-label": "CDF of range of page load time",
+                "x-label": "Max load time minus min load time", "file_flag": False, "doPercent": False},
+            "Final-time_onLoad-False-doPercent": {
+                "attr": "time_onLoad", "y-label": "CDF of page load time variability",
+                "x-label": "% variability in load time", "file_flag": False, "doPercent": True},
         }
         self.DICT_Y_VS_EXPLICITLY_BLOCKED = {
             "DOM-numObjsRequested": {
@@ -515,13 +539,17 @@ class AdAnalysis:
 
         return datapoint
 
-    def shouldExclude(self, target_key, fig_key, datapoint, denominator, excludeNoAds):
+    def shouldExclude(self, target_key, fig_key, datapoint, denominator, excludeNoAds, excludeTime):
         if target_key == fig_key:
-            if target_key == "Load-responseReceivedCount-False-doPercent":
+            #if target_key == "Load-responseReceivedCount-False-doPercent":
+            if target_key == "Load-responseReceivedCount-True-doPercent":
                 if datapoint >= 20 or denominator == 0:
                     return True
             elif target_key == "Load-numBlockedExplicitly":
                 if excludeNoAds and datapoint == 0:
+                    return True
+            elif target_key == "Final-time_onLoad-False":
+                if excludeTime and datapoint >= 1:
                     return True
         return False
 
@@ -632,7 +660,14 @@ class AdAnalysis:
         the_list = []
         blocking_file = summary_file
         for i in range(0, self.max_sample_num):
-            this_pair = (blocking_file, self.getMatchButFalse(blocking_file, summaries_file_list))
+            nonblocking_file = self.getMatchButFalse(blocking_file, summaries_file_list)
+            use_blocking_file = blocking_file
+            use_nonblocking_file = nonblocking_file
+            if blocking_file not in summaries_file_list:
+                use_blocking_file = None
+            if nonblocking_file not in summaries_file_list:
+                use_nonblocking_file = None
+            this_pair = (use_blocking_file, use_nonblocking_file)
             the_list.append(this_pair)
             sample_num = self.getSampleNum(blocking_file)
             blocking_file = blocking_file.replace('-'+sample_num+'-', '-'+str(int(sample_num)+1)+'-',1)

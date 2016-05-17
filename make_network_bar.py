@@ -16,8 +16,8 @@ import csv
 doScatterPlots = True
 useCategories = True
 orig_cdf_method = "diff_of_mins"
-fig_subdir = "figs-5-11-cat-exclude/orig"
-csv_subdir = "CSVs-5-11-cat-exclude/orig"
+fig_subdir = "figs-5-11/orig"
+csv_subdir = "CSVs-5-11/orig"
 # fig_dir = os.path.join(data_dir, "figs-exclude-volatile-no-cat/orig")
 # csv_dir = os.path.join(data_dir, "CSVs-exclude-volatile-no-cat/orig")
 # fig_dir = os.path.join(data_dir, "figs-test/orig")
@@ -102,37 +102,31 @@ if __name__ == "__main__":
         f_csv.close()
         if orig_file == "Final-time_onLoad":
             print(bar_data)
-
-        plt.figure(1)   # switch to bar plot
-        fig, ax = plt.subplots()
-        bar_locs = numpy.arange(len(means))
-        width = 0.35
-        bars = ax.bar(bar_locs, means, width, color='r', yerr=yerrs)
-        ax.set_xticks(bar_locs + width)
-        ax.set_xticklabels(labels, rotation="vertical")
-        bar_fname = csv_file[:-4]+"-bar.pdf"
-        bar_path = os.path.join(fig_dir, bar_fname)
-        plt.savefig(bar_path, bbox_inches="tight")
-
-        plt.figure(2)   # switch to cdf
-        cdf_fname = csv_file[:-4]+"-cdf.pdf"
-        cdf_path = os.path.join(fig_dir, cdf_fname)
-        plt.savefig(cdf_path, bbox_inches="tight")
-        plt.close()
-
-        plt.figure(3)   # switch to box
-        fig, ax = plt.subplots(figsize=(5.5,2.5))
-        bp = ax.boxplot(boxdata, whis=0, showfliers=False)
-        try:
-            ylabel = aa.DICT_ORIG_CDFS[orig_file]["box_ylabel"]
-        except KeyError:
-            ylabel = None
-        ax.set_ylabel(ylabel)
-        ax.set_xticklabels(labels, rotation="vertical")
-        box_fname = csv_file[:-4]+"-box.pdf"
-        box_path = os.path.join(fig_dir, box_fname)
-        plt.savefig(box_path, bbox_inches="tight")
-        plt.close()
+            plt.figure(1)   # switch to bar plot
+            xticklabels_raw = ["MacBookPro-wired", "MacBookPro-wired_0ms_512.0Kbps", "MacBookPro-wired_240ms_NoneKbps", "MacBookPro-wired_325ms_1500.0Kbps"]
+            xticklabels = [aa.LEGEND_DICT[x] for x in xticklabels_raw]
+            fig, ax = plt.subplots(figsize=(6,4.5))
+            bar_locs = numpy.arange(len(xticklabels_raw))
+            width = 0.2
+            adobe_values = [bar_data[x]["adobe.com"] for x in xticklabels_raw]
+            yahoo_values = [bar_data[x]["yahoo.com"] for x in xticklabels_raw]
+            cnbc_values = [bar_data[x]["cnbc.com"] for x in xticklabels_raw]
+            bars1 = ax.bar(bar_locs, adobe_values, width, color='r', label="adobe.com")#, yerr=yerrs)
+            bars2 = ax.bar(bar_locs + width, yahoo_values, width, color='b', label="yahoo.com")#, yerr=yerrs)
+            bars3 = ax.bar(bar_locs + 2*width, cnbc_values, width, color='g', label="cnbc.com")#, yerr=yerrs)
+            ax.set_xticks(bar_locs + 1.5*width)
+            ax.set_xticklabels(xticklabels)#, rotation="vertical")
+            ax.set_ylabel("Seconds")
+            ax.spines['top'].set_position(('data', 0))
+            bar_fname = "network_bar.pdf"
+            bar_path = os.path.join(fig_dir, bar_fname)
+            #ax.legend([bars1[0], bars2[0], bars3[0]], ["adobe.com", "yahoo.com", "cnbc.com"], loc="lower left")
+            ax.legend(loc="lower left")
+            ax.set_ylim([-10,20])
+            plt.savefig(bar_path, bbox_inches="tight")
+            exit()
+        else:
+            continue
         
 
 

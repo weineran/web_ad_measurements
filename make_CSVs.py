@@ -13,11 +13,13 @@ import statsmodels.distributions
 import csv
 
 doScatterPlots = False
-useCategories = True
-orig_cdf_method = "diff_of_mins"
+useCategories = False
+orig_cdf_method = "median_diff"
 excludeNoAds = False
-fig_subdir = "figs-5-11-cat-exclude"
-csv_subdir = "CSVs-5-11-cat-exclude"
+excludeTime = False
+fig_subdir = "figs-5-11"
+csv_subdir = "CSVs-5-11"
+
 
 # For CDFs
 colors = ['b', 'g', 'r', 'c', 'm', 'k']
@@ -263,7 +265,7 @@ if __name__ == "__main__":
                         except (ZeroDivisionError, TypeError):
                             range_datapoint = None
 
-                    if aa.shouldExclude("Load-responseReceivedCount-False-doPercent", fig_key, range_datapoint, denominator, excludeNoAds):
+                    if aa.shouldExclude("Load-responseReceivedCount-False-doPercent", fig_key, range_datapoint, denominator, excludeNoAds, excludeTime):
                         if device_type == "phone":
                             new_exclude_dict_mobile[hostname] = True
                         elif device_type == "computer":
@@ -290,7 +292,7 @@ if __name__ == "__main__":
                                                                 max_diff_datapoint,
                                                                 med_blocking_datapoint, med_diff_datapoint)
 
-                    if aa.shouldExclude("Load-numBlockedExplicitly", fig_key, datapoint, None, excludeNoAds):
+                    if aa.shouldExclude("Load-numBlockedExplicitly", fig_key, datapoint, None, excludeNoAds, excludeTime):
                         if device_type == "phone":
                             new_exclude_dict_mobile[hostname] = True
                         elif device_type == "computer":
