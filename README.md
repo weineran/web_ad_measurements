@@ -22,17 +22,20 @@ This readme will walk you through how to use the provided code to do the followi
 </ol>
 
 ### Step 0b. Prerequisites for running experiment on phone
-<ul>
+<ol>
 	<li> Get set up for Chrome remote debugging on Android device.</br>
 	  -Instructions <a href="https://developers.google.com/web/tools/chrome-devtools/debug/remote-debugging/remote-debugging?hl=en">here</a></br>
 	  -Troubleshooting <a href="http://stackoverflow.com/questions/21925992/chrome-devtools-devices-does-not-detect-device-when-plugged-in">here</a></li>
 	<li>Ensure that <a href="http://developer.android.com/tools/help/adb.html">`adb.exe`</a> is in your computer's PATH</li>
-</ul>
+	<li>Download and install Block This! on your phone (https://block-this.com/).</li>
+	<li>Run Block This! on your phone and tap the Start button.  When your phone asks if you want to allow the VPN, tap yes.</li>
+	<li>Look up the dimensions for your phone screen in pixels and make a note.  For an explanation, see the section on Brittleness below.</li>
+</ol>
 
 ## Running an experiment on your computer
 <ol>
 	<li>Launch Chrome from command line with arguments:</br>
-  		<code>/path/to/chrome --args --remote-debugging-port=9222 --user-data-dir=/path/to/chrome-profile</code></br>    (use chrome-profile from Step 0a)</br></br>
+  		<code>/path/to/chrome --args --remote-debugging-port=9222 --user-data-dir=/path/to/chrome-profile</code></br>    (use the chrome-profile directory you created in Step 0a)</br></br>
   		If you're not sure what <code>path/to/chrome</code> should be, you can try the following</br>
   		Mac: <code>open -a Google\ Chrome</code></br>(not exactly a path, but whatever)</br>
   		Windows: <code>"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"</code></li>
@@ -48,6 +51,7 @@ This readme will walk you through how to use the provided code to do the followi
 		<code>python run-page-loads-ABM.py -h</code></li>
 	<li>What you should see:</br>
 		<ul>
+			<li>The measurement script will prompt you with several questions.  Your answers to these questions will determine things like whether the script is driving your phone or your computer and file-naming conventions for the output data files.  One thing to note: When you are asked "What would you like to measure?" you should select "1. Ads"</li>
 			<li>Chrome will automatically enable/disable Adblock Plus and Adblock Minus.</li>
 			<li>Chrome will load each website in <code>url_lists/news-3.json</code> twice with Adblock Plus and twice with Adblock Minus, alternating between the two.</li>
 			<li>Each page load should last about 5 seconds.</li>
@@ -58,6 +62,18 @@ This readme will walk you through how to use the provided code to do the followi
 		<code>python run-page-loads-ABM.py 15 5 url_lists/all-15.json /path/to/data/ 9222</code></li>
 </ol>
 
+## Running an experiment on your phone
+<ol>
+	<li>Plug your phone into your computer via USB.</li>
+	<li>If prompted, allow the USB Debugging connection.  (You may have to return to Developer Options and re-enable USB Debugging.)</li>
+	<li>Open a Chrome tab on your phone.</li>
+	<li>On your computer, navigate to `chrome://inspect/`</br>
+		Confirm that you see your phone's Chrome tab is listed here.</li>
+	<li>Try a quick test run of the experiment:</br>
+		<code>python run-page-loads-ABM.py 5 2 url_lists/news-3.json /path/to/data/ 9222</code></br></br>
+	</li>
+	
+</ol>
 ### Step 1. Plug in your phone
 Plug your phone into your computer via USB.
 ### Step 2. Open a Chrome tab on your phone
