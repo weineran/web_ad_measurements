@@ -1,7 +1,12 @@
-## Getting started: Loading a few pages in a row on your phone
+## Flying Chrome by wire, loading pages, recording data
+This readme will walk you through how to use the provided code to do the following:
+<ul>
+	<li> Set up Chrome for "fly by wire" operation on your computer and also on an Android device.</li>
+	
+</ul>
 ### Step 0. Prerequisites
 <ul>
-  <li> Install <a href="https://www.google.com/chrome/browser/canary.html">Chrome Canary</a>.  (You can try regular Chrome or Chrome Beta, but those browsers don't seem to work for me.)</li>
+  <li> Install <a href="https://www.google.com/chrome/browser/desktop/">Google Chrome</a> on your computer.</li>
   <li> Get set up for Chrome remote debugging.</br>
   Instructions <a href="https://developers.google.com/web/tools/chrome-devtools/debug/remote-debugging/remote-debugging?hl=en">here</a></br>
   Troubleshooting <a href="http://stackoverflow.com/questions/21925992/chrome-devtools-devices-does-not-detect-device-when-plugged-in">here</a></li>
