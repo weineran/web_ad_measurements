@@ -16,6 +16,17 @@ class AutoDict(dict):
             value = self[item] = type(self)()
             return value
 
+class Website:
+    """
+    Represents multiple measurement of a single hostname, with and without ads
+    """
+
+    #constructor
+    def __init__(self, summary_file):
+        self.fname_list = []
+        self.max_sample_num = 0
+        self.num_good_samples = 0
+
 class AdAnalysis:
 
     #constructor
@@ -30,7 +41,9 @@ class AdAnalysis:
                                         ("MacMini-wired", "MacMini (Wired)"),
                                         ("MacBookPro-wired_325ms_1500.0Kbps", "325 ms,\n1,500 Kbps\n(In-Flight)"),
                                         ("MacBookPro-wired_240ms_NoneKbps", "240 ms\n(satellite)"),
-                                        ("MacBookPro-wired_0ms_512.0Kbps", "512 Kbps\n(Botswana)")])
+                                        ("MacBookPro-wired_0ms_512.0Kbps", "512 Kbps\n(Botswana)"),
+                                        ("MacBookPro_NoCache-wired","No Cache"),
+                                        ("MacBookPro_10000_Entries-wired","Big Cache")])
         self.MASTER_DICT = {
             "Final-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
             "DOM-numBlockedExplicitly": {"attr": "numBlockedExplicitly",},
@@ -554,7 +567,7 @@ class AdAnalysis:
         return False
 
     def selectDatapoint(self, method, min_nonblocking_datapoint, min_blocking_datapoint,
-                                                max_diff_datapoint,
+                                                max_diff_datapoint, min_diff_datapoint,
                                                 med_blocking_datapoint, med_diff_datapoint):
         if method == "diff_of_mins":
             datapoint = min_nonblocking_datapoint - min_blocking_datapoint
@@ -563,6 +576,10 @@ class AdAnalysis:
         elif method == "max_diff":
             datapoint = max_diff_datapoint
             key_suffix = " (max diff)"
+
+        elif method == "min_diff":
+            datapoint = min_diff_datapoint
+            key_suffix = " (-min diff)"
 
         elif method == "median_diff":
             datapoint = med_diff_datapoint
