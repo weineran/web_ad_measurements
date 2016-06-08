@@ -297,7 +297,7 @@ if __name__ == "__main__":
                         this_orig_cdf_method = orig_cdf_method
 
                     datapoint, key_suffix = aa.selectDatapoint(this_orig_cdf_method, min_nonblocking_datapoint, min_blocking_datapoint,
-                                                                max_diff_datapoint,
+                                                                max_diff_datapoint, min_diff_datapoint
                                                                 med_blocking_datapoint, med_diff_datapoint)
 
                     if aa.shouldExclude("Load-numBlockedExplicitly", fig_key, datapoint, None, excludeNoAds, excludeTime):

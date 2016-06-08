@@ -15,7 +15,7 @@ from collections import OrderedDict
 
 doScatterPlots = False
 useCategories = False
-orig_cdf_method = "median_diff"
+orig_cdf_method = "min_diff"
 fig_subdir = "figs-5-11"
 csv_subdir = "CSVs-5-11"
 excludeNoAds = False
@@ -285,7 +285,7 @@ if __name__ == "__main__":
                         this_orig_cdf_method = orig_cdf_method
 
                     datapoint, key_suffix = aa.selectDatapoint(this_orig_cdf_method, min_nonblocking_datapoint, min_blocking_datapoint,
-                                                                max_diff_datapoint,
+                                                                max_diff_datapoint, min_diff_datapoint,
                                                                 med_blocking_datapoint, med_diff_datapoint)
                     datapoint = -datapoint
                     if aa.shouldExclude("Load-numBlockedExplicitly", fig_key, datapoint, None, excludeNoAds, excludeTime):
@@ -400,9 +400,9 @@ if __name__ == "__main__":
         cdf = aa.DICT_ORIG_CDFS[cdf_name]["cdf"]
         #xlim = [-6,12]
         if useCategories:
-            cdf.plot(plotdir=fig_dir, title="", legend="upper left", bbox_to_anchor=(1.05, 1), lw=1.5, numSymbols=3)#, xlim=xlim)#styles={'linewidth':0.5})
+            cdf.plot(plotdir=fig_dir, title="", legend="lower right", bbox_to_anchor=(1.05, 1), lw=1.5, numSymbols=3)#, xlim=xlim)#styles={'linewidth':0.5})
         else:
-            cdf.plot(plotdir=fig_dir, title="", legend="upper left", lw=1.5, numSymbols=3)#, xlim=xlim)#styles={'linewidth':0.5}) bbox_to_anchor=(1.05, 1)
+            cdf.plot(plotdir=fig_dir, title="", legend="lower right", lw=1.5, numSymbols=3)#, xlim=xlim)#styles={'linewidth':0.5}) bbox_to_anchor=(1.05, 1)
         f_csv = open(os.path.join(csv_dir, cdf.baseName+".csv"), 'w')
         f_csv.write("key,avg,0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100"+nl)
         for key in cdf._cdfs:
