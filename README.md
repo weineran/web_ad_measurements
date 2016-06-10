@@ -41,7 +41,7 @@ This readme will walk you through how to use the provided code to do the followi
   		Mac: <code>open -a Google\ Chrome</code></br>(not exactly a path, but whatever)</br>
   		Windows: <code>"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"</code></li>
 	<li>Go to <code>chrome://extensions</code> in your browser.</li>
-	<li>Ensure that Adblock Plus is the first extension listed at the top of the list.  Ensure that the box is unchecked so that the extension is initially disabled.  NOTE: The list is alphabetical.  If there are other extensions listed above Adblock Plus, you will have to remove them by clicking the trash can icon.  For an explanation, see the section on Brittleness below.</li>
+	<li>Ensure that Adblock Plus is the first extension listed at the top of the list.  Ensure that the box is unchecked so that the extension is initially disabled.  NOTE: The list may be alphabetical?  If there are other extensions listed above Adblock Plus, you will have to remove them by clicking the trash can icon.  For an explanation, see the section on Brittleness below.</li>
 	<li>Ensure that Adblock Minus ("Adblock QMinus") is the next extension listed, directly beneath Adblock Plus.  Ensure that the box is checked so that the extension is initially enabled.</li>
 	<li>Ensure that the box for Developer Mode at the top of the page is unchecked</li>
 	<li>Make a directory to hold the data collected from the page loads.  e.g.</br>
