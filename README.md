@@ -10,7 +10,7 @@ This readme will walk you through how to use the provided code to do the followi
   <li>Install <a href="https://www.google.com/chrome/browser/desktop/">Google Chrome</a> on your computer.</li>
 </ol>
 
-#### Step 0a. Prerequisites for running experiment on computer ####
+    #### Step 0a. Prerequisites for running experiment on computer ####
 <ol>
 	<li>Create a directory that will serve as a separate User Profile for Chrome. e.g. </br>
   		<code>mkdir ~/chrome-profile</code></br>
