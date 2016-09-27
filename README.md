@@ -10,7 +10,7 @@ This readme will walk you through how to use the provided code to do the followi
   <li>Install <a href="https://www.google.com/chrome/browser/desktop/">Google Chrome</a> on your computer.</li>
 </ol>
 
-    #### Step 0a. Prerequisites for running experiment on computer ####
+#### Step 0a. Prerequisites for running experiment on computer
 <ol>
 	<li>Create a directory that will serve as a separate User Profile for Chrome. e.g. </br>
   		<code>mkdir ~/chrome-profile</code></br>
@@ -22,7 +22,7 @@ This readme will walk you through how to use the provided code to do the followi
 	<li>Clone and build Adblock Minus.  https://github.com/weineran/adblockminuschrome</li>
 </ol>
 
-### Step 0b. Prerequisites for running experiment on phone
+#### Step 0b. Prerequisites for running experiment on phone
 <ol>
 	<li> Get set up for Chrome remote debugging on Android device.</br>
 	  -Instructions <a href="https://developers.google.com/web/tools/chrome-devtools/debug/remote-debugging/remote-debugging?hl=en">here</a></br>
