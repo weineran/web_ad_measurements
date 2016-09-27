@@ -204,7 +204,7 @@ def openChromeCanary(debug_port, op_sys):
     p_chrome = Popen(command)
 
 def shouldOpenChromeCanary():
-    resp = raw_input("Is Chrome Canary already open with --remote-debugging-port flag?\n"+
+    resp = raw_input("Is Chrome already open with --remote-debugging-port flag?\n"+
                     "(Enter y or n)\n>")
     if resp == 'y':
         return False
@@ -323,6 +323,7 @@ class MeasurePageLoad:
         self.debug_port = debug_port
         self.categories_and_ranks = None    # The Alexa categories this URL is ranked in
         self.wsOverhead = 0
+        self.loadPageAndSaveDataTime = 0
 
         #self.p = None
         self.frames = {}
@@ -418,6 +419,8 @@ class MeasurePageLoad:
         self.logMsgs.append("Ratio: "+str(time_elapsed/(self.min_time*60)))
         self.logMsgs.append("Web Socket create/close overhead: "+str(self.wsOverhead))
         self.logMsgs.append("Web Socket percent of total time: "+str(self.wsOverhead/time_elapsed))
+        self.logMsgs.append("Load Page and Save Data time: "+str(self.loadPageAndSaveDataTime))
+        self.logMsgs.append("Load Page and Save Data percent of total time: "+str(self.loadPageAndSaveDataTime/time_elapsed))
 
         log_dir = os.path.join(self.output_dir,"log")
         log_path = os.path.join(log_dir, self.log_fname)
@@ -1166,6 +1169,8 @@ class MeasurePageLoad:
         all the data in msg_list is written to a file in the specified output_dir.
         """
         
+        loadPageAndSaveDataStart = time.time()
+
         # update attributes
         self.sample_num = sample_num
         self.page_url = dst_url
@@ -1200,6 +1205,9 @@ class MeasurePageLoad:
 
         # reset attributes for next page load
         self.resetAttributes()
+
+        loadPageAndSaveDataEnd = time.time()
+        self.loadPageAndSaveDataTime += (loadPageAndSaveDataEnd - loadPageAndSaveDataStart)
 
     def handleInvalidCert(self, resp_obj):
         msg = "Possible invalid certificate encountered. Skipping page: "+self.page_url+" "+self.rawData_fname+" "+str(resp_obj)
