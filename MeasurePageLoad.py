@@ -544,7 +544,8 @@ class MeasurePageLoad:
         self.pressAndReleaseKey(space_bar)
 
     def _tapDownArrow(self):
-        params = {'type': 'rawKeyDown', 'keyIdentifier': "Down", "isKeypad": False}
+        #params = {'type': 'rawKeyDown', 'keyIdentifier': "Down", "isKeypad": False}
+        params = {'type': 'keyDown', 'keyIdentifier': "Down", "isKeypad": False}
         self.sendMethod("Input.dispatchKeyEvent", params, True)
 
     def _disableAdBlockMinus(self):
@@ -566,7 +567,9 @@ class MeasurePageLoad:
 
         # tab 5 times
         tab_key = "U+0009"
-        self.pressKeyKtimes(tab_key, num_tabs)
+        #self.pressKeyKtimes(tab_key, num_tabs)
+        tabKeyCode = 9
+        self.pressVirtualKeyKTimes(tabKeyCode, num_tabs)
 
         # then space bar
         space_bar = "U+0020"
@@ -587,7 +590,9 @@ class MeasurePageLoad:
 
         # tab 3 times
         tab_key = "U+0009"
-        self.pressKeyKtimes(tab_key, num_tabs)
+        #self.pressKeyKtimes(tab_key, num_tabs)
+        tabKeyCode = 9
+        self.pressVirtualKeyKTimes(tabKeyCode, num_tabs)
 
         # then space bar
         space_bar = "U+0020"
@@ -650,6 +655,16 @@ class MeasurePageLoad:
         params = {'type': 'keyDown', 'keyIdentifier': keyIdentifier}
         self.sendMethod("Input.dispatchKeyEvent", params, True)
         params = {'type': 'keyUp', 'keyIdentifier': keyIdentifier}
+        self.sendMethod("Input.dispatchKeyEvent", params, True)
+
+    def pressAndReleaseVirtualKey(self, virtualKeyCode):
+        params = {'type': 'rawkeyDown',
+                  'nativeVirtualKeyCode': virtualKeyCode,
+                  'windowsVirtualKeyCode': virtualKeyCode}
+        self.sendMethod("Input.dispatchKeyEvent", params, True)
+        params = {'type': 'keyUp',
+                  'nativeVirtualKeyCode': virtualKeyCode,
+                  'windowsVirtualKeyCode': virtualKeyCode}
         self.sendMethod("Input.dispatchKeyEvent", params, True)
 
     def waitForPageLoad(self):
@@ -742,12 +757,18 @@ class MeasurePageLoad:
     def clearComputerDNScache(self):
         if self.op_sys == 'windows':
             command = "ipconfig /flushdns"
+            printAndCall(command)
         elif self.op_sys == 'linux':
             command = ["service", "nscd", "restart"]
+            printAndCall(command)
         elif self.op_sys == 'mac':
-            command = "sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder"
+            command = "sudo dscacheutil -flushcache"
             command = command.split(' ')
-        printAndCall(command)
+            printAndCall(command)
+
+            command = "sudo killall -HUP mDNSResponder"
+            command = command.split(' ')
+            printAndCall(command)
 
     def clearPhoneDNScache(self):
         #print("Toggling Airplane Mode")
@@ -783,9 +804,18 @@ class MeasurePageLoad:
         printAndCall(command)
 
     def pressKeyKtimes(self, keyIdentifier, num_times):
-        params = {'type': 'rawKeyDown', 'keyIdentifier': keyIdentifier}
+        #params = {'type': 'rawKeyDown', 'keyIdentifier': keyIdentifier}
+        params = {'type': 'keyDown', 'keyIdentifier': keyIdentifier}
         for i in range(0, num_times):
             self.sendMethod("Input.dispatchKeyEvent", params, True)
+
+    def pressVirtualKeyKTimes(self, virtualKeyCode, num_times):
+        params = {'type': 'rawkeyDown',
+                  'nativeVirtualKeyCode': virtualKeyCode,
+                  'windowsVirtualKeyCode': virtualKeyCode}
+        for i in range(0, num_times):
+            self.sendMethod("Input.dispatchKeyEvent", params, True)
+
 
     def navToURL(self, dst_url):
         if LOGSENTMSGS == False and LOGRESPONSES == False:
